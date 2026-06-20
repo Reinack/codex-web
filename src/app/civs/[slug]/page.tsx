@@ -9,9 +9,15 @@ import { civEmblemUrl } from "@/lib/img";
 type Params = { params: Promise<{ slug: string }> };
 
 // SSG: pre-renderiza una página por civ a partir del listado del grafo.
+// Si el backend no responde en build (p. ej. cold start), degradamos a [] y las
+// páginas se generan on-demand vía ISR — el build nunca falla por eso.
 export async function generateStaticParams() {
-  const civs = await getCivs();
-  return civs.map((c) => ({ slug: c.slug }));
+  try {
+    const civs = await getCivs();
+    return civs.map((c) => ({ slug: c.slug }));
+  } catch {
+    return [];
+  }
 }
 
 // Metadata dinámica por civ (título de pestaña + descripción social).
