@@ -46,6 +46,8 @@ const SURFACES = [
   { href: "/civs", title: "Civilizaciones", desc: "Explorá cada civ, su kit único y su tier." },
   { href: "/tree", title: "Árbol tecnológico", desc: "El tech tree completo por civilización." },
   { href: "/counters", title: "Grafo de counters", desc: "Qué le gana a qué, como red interactiva." },
+  { href: "/matchups", title: "Matchup Lab", desc: "Cruzá dos civs: plan, counters y notas." },
+  { href: "/graph", title: "Explorador del grafo", desc: "Navegá el grafo de conocimiento nodo a nodo." },
   { href: "/chat", title: "Chat GraphRAG", desc: "Preguntá estrategia; responde sobre el grafo." },
 ];
 

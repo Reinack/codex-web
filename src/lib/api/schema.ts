@@ -36,6 +36,18 @@ export const CivListItemSchema = z
 export const CivListSchema = z.array(CivListItemSchema);
 export type CivListItem = z.infer<typeof CivListItemSchema>;
 
+// Esquema de la salida YA transformada (lo que devuelve el BFF /api/civs). Lo usa
+// el cliente para validar sin volver a aplicar el transform de CivListItemSchema.
+export const CivListOutSchema = z.array(
+  z.object({
+    name: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    aliases: z.array(z.string()),
+    tier: z.string().nullable(),
+  }),
+);
+
 // --- GET /api/civ/:slug  (detalle) -----------------------------------------
 const NoteRefSchema = z.object({ title: z.string(), path: z.string() });
 export const CivDetailSchema = z
@@ -108,6 +120,112 @@ export const CounterGraphSchema = z.object({
 });
 export type CounterGraph = z.infer<typeof CounterGraphSchema>;
 export type CyNodeData = z.infer<typeof CyNodeDataSchema>;
+
+// --- GET /api/search?q=...  (título o alias ES/MX) -------------------------
+export const SearchResultSchema = z
+  .object({
+    path: z.string(),
+    title: z.string(),
+    type: z.string().nullable().default(null),
+    aliases: z.array(z.string()).nullable().default(null),
+  })
+  .transform((r) => ({
+    path: r.path,
+    title: r.title,
+    type: r.type,
+    slug: pathToSlug(r.path).toLowerCase(),
+    aliases: r.aliases ?? [],
+  }));
+export const SearchResultsSchema = z.array(SearchResultSchema);
+export type SearchResult = z.infer<typeof SearchResultSchema>;
+
+// --- GET /api/graph?path=...  (subgrafo, formato vis from/to) ---------------
+export const GraphSchema = z.object({
+  nodes: z.array(
+    z.object({
+      id: z.string(),
+      label: z.string().nullable().default(null),
+      type: z.string().nullable().default(null),
+    }),
+  ),
+  edges: z.array(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      rel: z.string().nullable().default(null),
+    }),
+  ),
+});
+export type GraphData = z.infer<typeof GraphSchema>;
+
+// --- GET /api/note?path=...  (nota + vecinos) ------------------------------
+export const NoteSchema = z.object({
+  path: z.string(),
+  title: z.string(),
+  type: z.string().nullable().default(null),
+  aliases: z.array(z.string()).nullable().default(null),
+  neighbors: z
+    .array(
+      z.object({
+        path: z.string(),
+        title: z.string(),
+        type: z.string().nullable().default(null),
+        rel: z.string().nullable().default(null),
+      }),
+    )
+    .default([]),
+});
+export type NoteData = z.infer<typeof NoteSchema>;
+
+// --- GET /api/matchup?me=&vs=&map=  (Matchup Lab) --------------------------
+const MatchupCivSchema = z
+  .object({ title: z.string(), path: z.string(), aliases: z.array(z.string()).nullable().default(null) })
+  .catchall(z.unknown());
+const CounterEdgeSchema = z
+  .object({
+    from: z.string(),
+    target: z.string(),
+    fromImg: z.string().nullable().optional(),
+    targetImg: z.string().nullable().optional(),
+    weight: z.number().nullable().optional(),
+    strength: z.string().nullable().optional(),
+    context: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+  })
+  .catchall(z.unknown());
+const KitSchema = z
+  .object({
+    uniqueUnits: z.array(z.object({ title: z.string() }).catchall(z.unknown())).default([]),
+    uniqueTechs: z.array(z.object({ title: z.string() }).catchall(z.unknown())).default([]),
+    tiers: z
+      .array(z.object({ list: z.string(), tier: z.string().nullable() }).catchall(z.unknown()))
+      .default([]),
+  })
+  .catchall(z.unknown());
+export const MatchupSchema = z
+  .object({
+    me: MatchupCivSchema,
+    vs: MatchupCivSchema,
+    kits: z.object({ me: KitSchema, vs: KitSchema }),
+    counters: z.object({
+      answers: z.array(CounterEdgeSchema).default([]),
+      threats: z.array(CounterEdgeSchema).default([]),
+    }),
+    sharedNotes: z
+      .array(
+        z.object({
+          note: z.string(),
+          heading: z.string().nullable().optional(),
+          excerpt: z.string().nullable().optional(),
+        }),
+      )
+      .default([]),
+    plan: z.array(z.string()).default([]),
+    planVs: z.array(z.string()).default([]),
+  })
+  .catchall(z.unknown());
+export type Matchup = z.infer<typeof MatchupSchema>;
+export type CounterEdge = z.infer<typeof CounterEdgeSchema>;
 
 // --- POST /api/chat  (GraphRAG, respuesta de una sola pasada) ---------------
 // El backend hace shell-out a Python y devuelve UN JSON (no streaming).
