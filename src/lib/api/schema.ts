@@ -12,6 +12,10 @@ export function pathToSlug(path: string): string {
 
 // --- GET /api/civs  (listado) ----------------------------------------------
 // Backend: { path, title, aliases: string[]|null, tierArabia: string|null }
+// Ojo con la casing: las notas en Neo4j son title-case ("civs/Khmer.md") pero
+// los emblemas PNG son lowercase ("khmer.png"). Exponemos:
+//   - `name`: basename original ("Khmer") → para el lookup case-sensitive del detalle
+//   - `slug`: lowercase ("khmer")        → para URLs idiomáticas y para el emblema
 export const CivListItemSchema = z
   .object({
     path: z.string(),
@@ -19,12 +23,16 @@ export const CivListItemSchema = z
     aliases: z.array(z.string()).nullable().default(null),
     tierArabia: z.string().nullable().default(null),
   })
-  .transform((c) => ({
-    slug: pathToSlug(c.path),
-    title: c.title,
-    aliases: c.aliases ?? [],
-    tier: c.tierArabia,
-  }));
+  .transform((c) => {
+    const name = pathToSlug(c.path);
+    return {
+      name,
+      slug: name.toLowerCase(),
+      title: c.title,
+      aliases: c.aliases ?? [],
+      tier: c.tierArabia,
+    };
+  });
 export const CivListSchema = z.array(CivListItemSchema);
 export type CivListItem = z.infer<typeof CivListItemSchema>;
 
@@ -43,7 +51,7 @@ export const CivDetailSchema = z
       .default([]),
   })
   .transform((c) => ({
-    slug: pathToSlug(c.path),
+    slug: pathToSlug(c.path).toLowerCase(),
     title: c.title,
     aliases: c.aliases ?? [],
     type: c.type,

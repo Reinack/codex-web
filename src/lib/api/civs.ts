@@ -8,8 +8,13 @@ export function getCivs(): Promise<CivListItem[]> {
   return fetchCodex("/api/civs", CivListSchema, { revalidate: REVALIDATE.civs });
 }
 
-export function getCiv(slug: string): Promise<CivDetail> {
-  return fetchCodex(`/api/civ/${encodeURIComponent(slug)}`, CivDetailSchema, {
+export async function getCiv(slug: string): Promise<CivDetail> {
+  // El endpoint de detalle es case-sensitive (matchea path "civs/{name}.md").
+  // Resolvemos el `name` title-case desde el listado (cacheado) a partir del
+  // slug lowercase de la URL. Así las URLs quedan limpias sin romper el match.
+  const civs = await getCivs();
+  const name = civs.find((c) => c.slug === slug.toLowerCase())?.name ?? slug;
+  return fetchCodex(`/api/civ/${encodeURIComponent(name)}`, CivDetailSchema, {
     revalidate: REVALIDATE.civs,
   });
 }
