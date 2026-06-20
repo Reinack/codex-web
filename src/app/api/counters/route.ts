@@ -3,6 +3,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { fetchCodex, CodexApiError, REVALIDATE } from "@/lib/api/client";
 import { CounterGraphSchema } from "@/lib/api/schema";
+import { unitIconUrl } from "@/lib/tree/assets";
 
 export async function GET(req: NextRequest) {
   const unit = req.nextUrl.searchParams.get("unit")?.trim();
@@ -15,7 +16,15 @@ export async function GET(req: NextRequest) {
       CounterGraphSchema,
       { revalidate: REVALIDATE.counters },
     );
-    return NextResponse.json(data);
+    // Enriquecemos cada nodo con la URL absoluta de su ícono (server-side, así el
+    // asset host no se expone como config en el cliente).
+    const enriched = {
+      ...data,
+      nodes: data.nodes.map((n) => ({
+        data: { ...n.data, img: unitIconUrl(n.data.imgKey) },
+      })),
+    };
+    return NextResponse.json(enriched);
   } catch (err) {
     if (err instanceof CodexApiError) {
       const status = err.status === 404 ? 404 : 502;

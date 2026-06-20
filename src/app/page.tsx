@@ -44,6 +44,7 @@ function StatsStripSkeleton() {
 
 const SURFACES = [
   { href: "/civs", title: "Civilizaciones", desc: "Explorá cada civ, su kit único y su tier." },
+  { href: "/tree", title: "Árbol tecnológico", desc: "El tech tree completo por civilización." },
   { href: "/counters", title: "Grafo de counters", desc: "Qué le gana a qué, como red interactiva." },
   { href: "/chat", title: "Chat GraphRAG", desc: "Preguntá estrategia; responde sobre el grafo." },
 ];
@@ -51,22 +52,40 @@ const SURFACES = [
 export default function Home() {
   return (
     <main className="flex flex-col gap-10">
-      <section className="flex flex-col gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+      <section className="flex flex-col items-start gap-4 pt-4">
+        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+          Neo4j · GraphRAG · 658 notas
+        </span>
+        <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
           El grafo de conocimiento de{" "}
-          <span className="text-amber-600 dark:text-amber-400">Age of Empires II</span>,
-          consultable.
+          <span className="bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
+            Age of Empires II
+          </span>
+          , consultable.
         </h1>
-        <p className="max-w-2xl text-zinc-600 dark:text-zinc-400">
-          Frontend Next.js + TypeScript sobre la API de aoe2-codex (Neo4j + GraphRAG).
+        <p className="max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
+          Civilizaciones, árbol tecnológico, grafo de counters y un chat que responde
+          sobre el grafo. Frontend Next.js + TypeScript sobre la API de aoe2-codex.
         </p>
+        <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
+          {["Next.js", "TypeScript", "Tailwind", "TanStack Query", "Cytoscape", "zod"].map(
+            (t) => (
+              <span
+                key={t}
+                className="rounded-md border border-zinc-200 bg-white px-2 py-1 dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                {t}
+              </span>
+            ),
+          )}
+        </div>
       </section>
 
       <Suspense fallback={<StatsStripSkeleton />}>
         <StatsStrip />
       </Suspense>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SURFACES.map((s) => (
           <Link
             key={s.href}

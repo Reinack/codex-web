@@ -80,6 +80,7 @@ const CyNodeDataSchema = z
     label: z.string().optional(),
     type: z.string().optional(),
     imgKey: z.string().optional(),
+    img: z.string().optional(), // URL del ícono, inyectada por el BFF
     weight: z.number().optional(),
     tier: z.string().optional(),
     nota: z.string().optional(),
