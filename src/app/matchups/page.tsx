@@ -4,6 +4,43 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCivsClient, fetchMatchup } from "@/lib/api/explore-client";
 import type { CounterEdge } from "@/lib/api/schema";
+import { RadarChart } from "@/components/RadarChart";
+import { getCivRadar, PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
+
+const ME_COLOR = "#f59e0b";
+const VS_COLOR = "#0ea5e9";
+
+function MatchupRadars({ me, vs }: { me: string; vs: string }) {
+  const meR = getCivRadar(me);
+  const vsR = getCivRadar(vs);
+  if (!meR || !vsR) return null; // ambas civs deben tener datos de radar (vault)
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <h3 className="mb-1 text-center text-xs font-medium text-zinc-500">Fase y mapa</h3>
+        <RadarChart
+          axes={PHASE_AXES}
+          max={RADAR_MAX}
+          series={[
+            { name: me, values: meR.phase, color: ME_COLOR },
+            { name: vs, values: vsR.phase, color: VS_COLOR },
+          ]}
+        />
+      </div>
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <h3 className="mb-1 text-center text-xs font-medium text-zinc-500">Categoría</h3>
+        <RadarChart
+          axes={CATEGORY_AXES}
+          max={RADAR_MAX}
+          series={[
+            { name: me, values: meR.category, color: ME_COLOR },
+            { name: vs, values: vsR.category, color: VS_COLOR },
+          ]}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function MatchupsPage() {
   const civsQ = useQuery({ queryKey: ["civs"], queryFn: fetchCivsClient });
@@ -68,6 +105,8 @@ export default function MatchupsPage() {
 
       {m.data && (
         <div className="flex flex-col gap-6">
+          <MatchupRadars me={m.data.me.title} vs={m.data.vs.title} />
+
           <div className="grid gap-4 lg:grid-cols-2">
             <PlanCard title={`Plan — ${m.data.me.title}`} bullets={m.data.plan} accent />
             <PlanCard title={`Plan rival — ${m.data.vs.title}`} bullets={m.data.planVs} />

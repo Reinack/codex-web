@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { getCiv, getCivs } from "@/lib/api/civs";
 import { CodexApiError } from "@/lib/api/client";
 import { civEmblemUrl } from "@/lib/img";
+import { RadarChart } from "@/components/RadarChart";
+import { getCivRadar, PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -44,6 +46,8 @@ export default async function CivDetailPage({ params }: Params) {
     if (err instanceof CodexApiError && err.status === 404) notFound();
     throw err;
   }
+
+  const radar = getCivRadar(civ.slug);
 
   return (
     <main className="flex flex-col gap-8">
@@ -85,6 +89,34 @@ export default async function CivDetailPage({ params }: Params) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {radar && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-medium text-zinc-500">Perfil (radar)</h2>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+              <h3 className="mb-1 text-center text-xs font-medium text-zinc-500">
+                Fase y mapa
+              </h3>
+              <RadarChart
+                axes={PHASE_AXES}
+                max={RADAR_MAX}
+                series={[{ name: civ.title, values: radar.phase, color: "#f59e0b" }]}
+              />
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+              <h3 className="mb-1 text-center text-xs font-medium text-zinc-500">
+                Categoría
+              </h3>
+              <RadarChart
+                axes={CATEGORY_AXES}
+                max={RADAR_MAX}
+                series={[{ name: civ.title, values: radar.category, color: "#f59e0b" }]}
+              />
+            </div>
+          </div>
         </section>
       )}
 
