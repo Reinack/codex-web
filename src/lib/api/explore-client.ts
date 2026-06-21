@@ -6,6 +6,8 @@ import {
   NoteSchema,
   MatchupSchema,
   CivListOutSchema,
+  RadarSchema,
+  type RadarData,
   type SearchResult,
   type GraphData,
   type NoteData,
@@ -45,4 +47,11 @@ export async function fetchMatchup(me: string, vs: string, map: string): Promise
 
 export async function fetchCivsClient(): Promise<CivListItem[]> {
   return CivListOutSchema.parse(await getJson(`/api/civs`));
+}
+
+export async function fetchCivRadar(slug: string): Promise<RadarData | null> {
+  const res = await fetch(`/api/civ-radar?slug=${encodeURIComponent(slug)}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return RadarSchema.parse(await res.json());
 }

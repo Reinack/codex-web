@@ -38,7 +38,9 @@ export type CivRadar = { phase: number[]; category: number[] };
 // category = [Infantería, Caballería, Arqueros, Asedio, Naval, Monjes, Defensa, Economía]
 // Las 6 primeras civs mapean ratings reales del Viper; el resto son primeras
 // estimaciones (marcadas ~ en el vault) pendientes de refinar.
-export const CIV_RADAR: Record<string, CivRadar> = {
+// Fallback local: se usa solo si el backend (/api/civ-radar) no está disponible
+// todavía (p. ej. antes de redeployar aoe2-codex con el endpoint).
+export const FALLBACK_RADAR: Record<string, CivRadar> = {
   armenians: { phase: [5, 7, 8, 7, 8, 6, 7, 5], category: [8, 4, 7, 6, 8, 7, 6, 5] },
   aztecs: { phase: [9, 6, 9, 8, 8, 9, 4, 4], category: [8, 1, 6, 8, 4, 10, 6, 8] },
   bengalis: { phase: [5, 5, 6, 7, 2, 5, 5, 5], category: [4, 5, 7, 6, 5, 5, 5, 7] },
@@ -94,6 +96,6 @@ export const CIV_RADAR: Record<string, CivRadar> = {
   wu: { phase: [6, 7, 8, 8, 8, 6, 5, 6], category: [6, 8, 6, 6, 5, 5, 5, 8] },
 };
 
-export function getCivRadar(slug: string): CivRadar | null {
-  return CIV_RADAR[slug.toLowerCase()] ?? null;
+export function getCivRadarFallback(slug: string): CivRadar | null {
+  return FALLBACK_RADAR[slug.toLowerCase()] ?? null;
 }

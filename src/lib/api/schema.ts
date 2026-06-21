@@ -227,6 +227,13 @@ export const MatchupSchema = z
 export type Matchup = z.infer<typeof MatchupSchema>;
 export type CounterEdge = z.infer<typeof CounterEdgeSchema>;
 
+// --- GET /api/civ-radar/:slug  (perfil de fuerza, generado desde el vault) --
+export const RadarSchema = z.object({
+  phase: z.array(z.number()),
+  category: z.array(z.number()),
+});
+export type RadarData = z.infer<typeof RadarSchema>;
+
 // --- POST /api/chat  (GraphRAG, respuesta de una sola pasada) ---------------
 // El backend hace shell-out a Python y devuelve UN JSON (no streaming).
 // `hits_meta` es lo que alimenta el panel "Ver razonamiento".

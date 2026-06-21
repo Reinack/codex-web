@@ -6,7 +6,8 @@ import { getCiv, getCivs } from "@/lib/api/civs";
 import { CodexApiError } from "@/lib/api/client";
 import { civEmblemUrl } from "@/lib/img";
 import { RadarChart } from "@/components/RadarChart";
-import { getCivRadar, PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
+import { getCivRadar } from "@/lib/api/radar";
+import { PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -47,7 +48,7 @@ export default async function CivDetailPage({ params }: Params) {
     throw err;
   }
 
-  const radar = getCivRadar(civ.slug);
+  const radar = await getCivRadar(civ.slug);
 
   return (
     <main className="flex flex-col gap-8">

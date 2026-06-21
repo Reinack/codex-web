@@ -2,18 +2,21 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchCivsClient, fetchMatchup } from "@/lib/api/explore-client";
+import { fetchCivsClient, fetchMatchup, fetchCivRadar } from "@/lib/api/explore-client";
 import type { CounterEdge } from "@/lib/api/schema";
 import { RadarChart } from "@/components/RadarChart";
-import { getCivRadar, PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
+import { PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
 
 const ME_COLOR = "#f59e0b";
 const VS_COLOR = "#0ea5e9";
 
 function MatchupRadars({ me, vs }: { me: string; vs: string }) {
-  const meR = getCivRadar(me);
-  const vsR = getCivRadar(vs);
-  if (!meR || !vsR) return null; // ambas civs deben tener datos de radar (vault)
+  const meQ = useQuery({ queryKey: ["radar", me], queryFn: () => fetchCivRadar(me) });
+  const vsQ = useQuery({ queryKey: ["radar", vs], queryFn: () => fetchCivRadar(vs) });
+  const meR = meQ.data;
+  const vsR = vsQ.data;
+  if (!meR || !vsR) return null; // ambas civs deben tener datos de radar
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
