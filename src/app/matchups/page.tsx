@@ -6,6 +6,7 @@ import { fetchCivsClient, fetchMatchup, fetchCivRadar } from "@/lib/api/explore-
 import type { CounterEdge } from "@/lib/api/schema";
 import { RadarChart } from "@/components/RadarChart";
 import { PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
+import { buildRadarPlan } from "@/lib/radar/plan";
 
 const ME_COLOR = "#f59e0b";
 const VS_COLOR = "#0ea5e9";
@@ -57,6 +58,25 @@ export default function MatchupsPage() {
     queryFn: () => fetchMatchup(submitted!.me, submitted!.vs, submitted!.map),
     enabled: !!submitted,
   });
+
+  // Radares de ambas civs (comparten caché con MatchupRadars por queryKey) →
+  // de acá derivamos el plan y las amenazas que SÍ varían por civilización.
+  const meTitle = m.data?.me.title;
+  const vsTitle = m.data?.vs.title;
+  const meRadarQ = useQuery({
+    queryKey: ["radar", meTitle],
+    queryFn: () => fetchCivRadar(meTitle!),
+    enabled: !!meTitle,
+  });
+  const vsRadarQ = useQuery({
+    queryKey: ["radar", vsTitle],
+    queryFn: () => fetchCivRadar(vsTitle!),
+    enabled: !!vsTitle,
+  });
+  const meBrief =
+    meRadarQ.data && vsRadarQ.data ? buildRadarPlan(meRadarQ.data, vsRadarQ.data) : null;
+  const vsBrief =
+    meRadarQ.data && vsRadarQ.data ? buildRadarPlan(vsRadarQ.data, meRadarQ.data) : null;
 
   const run = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,9 +130,19 @@ export default function MatchupsPage() {
         <div className="flex flex-col gap-6">
           <MatchupRadars me={m.data.me.title} vs={m.data.vs.title} />
 
+          {meBrief && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <PlanCard title={`Plan — ${m.data.me.title}`} bullets={meBrief.plan} accent />
+              <PlanCard title={`Amenazas — ${m.data.me.title}`} bullets={meBrief.threats} tone="bad" />
+            </div>
+          )}
+
           <div className="grid gap-4 lg:grid-cols-2">
-            <PlanCard title={`Plan — ${m.data.me.title}`} bullets={m.data.plan} accent />
-            <PlanCard title={`Plan rival — ${m.data.vs.title}`} bullets={m.data.planVs} />
+            <PlanCard
+              title={`Plan rival — ${m.data.vs.title}`}
+              bullets={vsBrief ? vsBrief.plan : m.data.planVs}
+            />
+            <PlanCard title={`Notas tácticas — ${m.data.me.title}`} bullets={m.data.plan} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -193,19 +223,21 @@ function PlanCard({
   title,
   bullets,
   accent,
+  tone,
 }: {
   title: string;
   bullets: string[];
   accent?: boolean;
+  tone?: "bad";
 }) {
+  const cls =
+    tone === "bad"
+      ? "border-rose-400/40 bg-rose-500/5"
+      : accent
+        ? "border-amber-400/40 bg-amber-500/5"
+        : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900";
   return (
-    <section
-      className={`flex flex-col gap-2 rounded-xl border p-4 ${
-        accent
-          ? "border-amber-400/40 bg-amber-500/5"
-          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-      }`}
-    >
+    <section className={`flex flex-col gap-2 rounded-xl border p-4 ${cls}`}>
       <h2 className="text-sm font-semibold">{title}</h2>
       {bullets.length === 0 ? (
         <p className="text-sm text-zinc-400">Sin plan generado.</p>

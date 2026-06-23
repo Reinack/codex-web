@@ -8,6 +8,7 @@ import { civEmblemUrl } from "@/lib/img";
 import { RadarChart } from "@/components/RadarChart";
 import { getCivRadar } from "@/lib/api/radar";
 import { PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
+import { buildRadarPlan } from "@/lib/radar/plan";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -49,6 +50,7 @@ export default async function CivDetailPage({ params }: Params) {
   }
 
   const radar = await getCivRadar(civ.slug);
+  const brief = radar ? buildRadarPlan(radar) : null;
 
   return (
     <main className="flex flex-col gap-8">
@@ -121,11 +123,48 @@ export default async function CivDetailPage({ params }: Params) {
         </section>
       )}
 
+      {brief && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-medium text-zinc-500">Plan y amenazas</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <BriefCard title="Plan" bullets={brief.plan} tone="good" />
+            <BriefCard title="Amenazas" bullets={brief.threats} tone="bad" />
+          </div>
+        </section>
+      )}
+
       <div className="grid gap-6 sm:grid-cols-2">
         <KitSection title="Unidades únicas" items={civ.uniqueUnits} />
         <KitSection title="Tecnologías únicas" items={civ.uniqueTechs} />
       </div>
     </main>
+  );
+}
+
+function BriefCard({
+  title,
+  bullets,
+  tone,
+}: {
+  title: string;
+  bullets: string[];
+  tone: "good" | "bad";
+}) {
+  const cls =
+    tone === "bad" ? "border-rose-400/40 bg-rose-500/5" : "border-amber-400/40 bg-amber-500/5";
+  return (
+    <section className={`flex flex-col gap-2 rounded-xl border p-4 ${cls}`}>
+      <h3 className="text-sm font-semibold">{title}</h3>
+      {bullets.length === 0 ? (
+        <p className="text-sm text-zinc-400">Sin datos.</p>
+      ) : (
+        <ul className="flex list-disc flex-col gap-1.5 pl-4 text-sm text-zinc-700 dark:text-zinc-300">
+          {bullets.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
