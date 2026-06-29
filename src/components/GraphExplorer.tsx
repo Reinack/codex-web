@@ -1,38 +1,110 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import cytoscape, { type NodeDefinition, type EdgeDefinition } from "cytoscape";
+import { useEffect, useMemo, useRef } from "react";
+import cytoscape, {
+  type Core,
+  type NodeDefinition,
+  type EdgeDefinition,
+} from "cytoscape";
+import fcose from "cytoscape-fcose";
 import type { GraphData } from "@/lib/api/schema";
 
-// Color por tipo de nodo (mismo esquema que el explorador original).
+// Registrar el layout force-directed (idempotente entre HMR/recargas).
+let fcoseRegistered = false;
+function ensureFcose() {
+  if (!fcoseRegistered) {
+    cytoscape.use(fcose);
+    fcoseRegistered = true;
+  }
+}
+
+// Paleta por tipo de nodo (consistente con el resto de la app).
+const TYPE_COLOR: Record<string, string> = {
+  civ: "#f59e0b",
+  unit: "#38bdf8",
+  strateg: "#a78bfa",
+  tech: "#34d399",
+  building: "#fb923c",
+  map: "#f472b6",
+  player: "#f87171",
+};
 function colorForType(type?: string | null): string {
   const t = (type || "").toLowerCase();
-  if (t.includes("civ")) return "#e8b84b";
-  if (t.includes("unit")) return "#6baed6";
-  if (t.includes("strateg")) return "#9e9ac8";
-  if (t.includes("tech")) return "#74c476";
-  if (t.includes("building")) return "#fd8d3c";
-  return "#8b949e";
+  for (const key of Object.keys(TYPE_COLOR)) if (t.includes(key)) return TYPE_COLOR[key];
+  return "#94a3b8";
+}
+const TYPE_LABEL_ES: Record<string, string> = {
+  meta: "Meta",
+  matchups: "Matchup",
+  matchup: "Matchup",
+  counters: "Counter",
+  resources: "Recurso",
+  technologies: "Tecnología",
+  root: "General",
+};
+function labelForType(type?: string | null): string {
+  const t = (type || "").toLowerCase();
+  if (t.includes("civ")) return "Civilización";
+  if (t.includes("unit")) return "Unidad";
+  if (t.includes("strateg")) return "Estrategia";
+  if (t.includes("tech")) return "Tecnología";
+  if (t.includes("building")) return "Edificio";
+  if (t.includes("map")) return "Mapa";
+  if (t.includes("player")) return "Jugador";
+  if (TYPE_LABEL_ES[t]) return TYPE_LABEL_ES[t];
+  // Fallback: capitaliza el tipo crudo en vez de mostrarlo en minúscula.
+  return type ? type.charAt(0).toUpperCase() + type.slice(1) : "Otro";
 }
 
 export function GraphExplorer({
   graph,
   centerId,
   onSelect,
+  onExplore,
 }: {
   graph: GraphData;
   centerId: string;
   onSelect?: (id: string | null) => void;
+  onExplore?: (id: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cyRef = useRef<Core | null>(null);
   const onSelectRef = useRef(onSelect);
+  const onExploreRef = useRef(onExplore);
   useEffect(() => {
     onSelectRef.current = onSelect;
-  }, [onSelect]);
+    onExploreRef.current = onExplore;
+  }, [onSelect, onExplore]);
+
+  // Tipos presentes → leyenda (se recalcula sólo si cambia el grafo).
+  const legend = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const n of graph.nodes) {
+      const key = labelForType(n.type);
+      if (!seen.has(key)) seen.set(key, colorForType(n.type));
+    }
+    return [...seen.entries()].map(([label, color]) => ({ label, color }));
+  }, [graph]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    ensureFcose();
+
+    const dark =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+    const ink = dark ? "#e4e4e7" : "#18181b";
+    const textBg = dark ? "#09090b" : "#ffffff";
+    const edgeColor = dark ? "#3f3f46" : "#d4d4d8";
+
+    // Grado de cada nodo → tamaño (centralidad visual, estándar en exploradores).
+    const degree = new Map<string, number>();
+    for (const e of graph.edges) {
+      degree.set(e.from, (degree.get(e.from) ?? 0) + 1);
+      degree.set(e.to, (degree.get(e.to) ?? 0) + 1);
+    }
+    const maxDeg = Math.max(1, ...degree.values());
 
     const nodes: NodeDefinition[] = graph.nodes.map((n) => ({
       data: {
@@ -40,6 +112,7 @@ export function GraphExplorer({
         label: n.label ?? n.id,
         type: n.type ?? "",
         color: colorForType(n.type),
+        degree: degree.get(n.id) ?? 0,
         center: n.id === centerId ? 1 : 0,
       },
     }));
@@ -57,64 +130,200 @@ export function GraphExplorer({
             "background-color": "data(color)",
             label: "data(label)",
             "font-size": 10,
-            color: "#f8fafc",
+            "font-weight": 500,
+            color: ink,
             "text-valign": "bottom",
             "text-halign": "center",
-            "text-margin-y": 4,
+            "text-margin-y": 5,
             "text-wrap": "wrap",
-            "text-max-width": "110px",
-            "text-background-color": "#0f172a",
-            "text-background-opacity": 0.8,
+            "text-max-width": "120px",
+            "text-background-color": textBg,
+            "text-background-opacity": 0.75,
             "text-background-padding": "3px",
             "text-background-shape": "roundrectangle",
-            width: 30,
-            height: 30,
+            "border-width": 2,
+            "border-color": textBg,
+            width: `mapData(degree, 0, ${maxDeg}, 26, 60)`,
+            height: `mapData(degree, 0, ${maxDeg}, 26, 60)`,
+            "transition-property": "opacity, border-color, border-width",
+            "transition-duration": 150,
           },
         },
         {
           selector: "node[center = 1]",
-          style: { width: 58, height: 58, "font-size": 12, "border-width": 4, "border-color": "#f59e0b" },
+          style: {
+            "border-width": 4,
+            "border-color": "#f59e0b",
+            "font-size": 13,
+            "font-weight": 700,
+            width: 64,
+            height: 64,
+            "z-index": 10,
+          },
         },
         {
           selector: "edge",
           style: {
             width: 1.5,
             "curve-style": "bezier",
-            "line-color": "#cbd5e1",
-            "target-arrow-shape": "none",
-            label: "data(label)",
+            "line-color": edgeColor,
+            "target-arrow-shape": "triangle",
+            "target-arrow-color": edgeColor,
+            "arrow-scale": 0.8,
+            label: "",
             "font-size": 8,
-            color: "#94a3b8",
+            color: dark ? "#a1a1aa" : "#71717a",
             "text-rotation": "autorotate",
-            opacity: 0.7,
+            "text-background-color": textBg,
+            "text-background-opacity": 0.85,
+            "text-background-padding": "2px",
+            opacity: 0.55,
+            "transition-property": "opacity, line-color, width",
+            "transition-duration": 150,
           },
         },
-        { selector: "node:selected", style: { "border-width": 4, "border-color": "#0ea5e9" } },
+        // Resaltado de vecindario: nodo/arista activos brillan, el resto se atenúa.
+        { selector: ".faded", style: { opacity: 0.12, "text-opacity": 0.12 } },
+        {
+          selector: "node.highlight",
+          style: { "border-color": "#0ea5e9", "border-width": 3, "z-index": 20 },
+        },
+        {
+          selector: "edge.highlight",
+          style: { "line-color": "#0ea5e9", "target-arrow-color": "#0ea5e9", width: 2.5, opacity: 1, label: "data(label)" },
+        },
+        { selector: "node:selected", style: { "border-color": "#0ea5e9", "border-width": 4 } },
       ],
       layout: {
-        name: "concentric",
-        concentric: (n) => (n.data("center") === 1 ? 10 : 1),
-        levelWidth: () => 1,
-        minNodeSpacing: 34,
-        padding: 30,
-      },
-      minZoom: 0.2,
-      maxZoom: 2.5,
-      wheelSensitivity: 0.2,
+        name: "fcose",
+        quality: "default",
+        animate: true,
+        animationDuration: 600,
+        randomize: true,
+        nodeRepulsion: 6500,
+        idealEdgeLength: 95,
+        nodeSeparation: 90,
+        padding: 40,
+        nestingFactor: 0.1,
+      } as cytoscape.LayoutOptions,
+      minZoom: 0.15,
+      maxZoom: 3,
+      wheelSensitivity: 0.25,
+    });
+    cyRef.current = cy;
+
+    // --- Resaltado de vecindario (hover) ------------------------------------
+    const focus = (id: string) => {
+      const node = cy.getElementById(id);
+      const hood = node.closedNeighborhood();
+      cy.elements().addClass("faded");
+      hood.removeClass("faded").addClass("highlight");
+    };
+    const clear = () => cy.elements().removeClass("faded highlight");
+
+    let pinned: string | null = null;
+    cy.on("mouseover", "node", (e) => {
+      if (!pinned) focus(e.target.id());
+    });
+    cy.on("mouseout", "node", () => {
+      if (!pinned) clear();
     });
 
-    cy.on("tap", "node", (evt) => onSelectRef.current?.(evt.target.id()));
-    cy.on("tap", (evt) => {
-      if (evt.target === cy) onSelectRef.current?.(null);
+    // --- Selección + doble click para expandir ------------------------------
+    let lastTap = 0;
+    let lastTapId = "";
+    cy.on("tap", "node", (e) => {
+      const id = e.target.id();
+      const now = Date.now();
+      if (id === lastTapId && now - lastTap < 350) {
+        onExploreRef.current?.(id); // doble click → expandir
+        lastTap = 0;
+        return;
+      }
+      lastTap = now;
+      lastTapId = id;
+      pinned = id;
+      focus(id);
+      onSelectRef.current?.(id);
+    });
+    cy.on("tap", (e) => {
+      if (e.target === cy) {
+        pinned = null;
+        clear();
+        onSelectRef.current?.(null);
+      }
     });
 
-    return () => cy.destroy();
+    // Cursor pointer sobre nodos.
+    cy.on("mouseover", "node", () => (container.style.cursor = "pointer"));
+    cy.on("mouseout", "node", () => (container.style.cursor = "default"));
+
+    return () => {
+      cy.destroy();
+      cyRef.current = null;
+    };
   }, [graph, centerId]);
 
+  const zoomBy = (factor: number) => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.zoom({ level: cy.zoom() * factor, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+  };
+  const fit = () => cyRef.current?.animate({ fit: { eles: cyRef.current.elements(), padding: 40 }, duration: 300 });
+  const relayout = () =>
+    cyRef.current
+      ?.layout({ name: "fcose", animate: true, animationDuration: 600, randomize: true } as cytoscape.LayoutOptions)
+      .run();
+
   return (
-    <div
-      ref={containerRef}
-      className="h-[560px] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-    />
+    <div className="relative h-[600px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+      <div ref={containerRef} className="h-full w-full" />
+
+      {/* Toolbar de controles (estilo Bloom/Linkurious) */}
+      <div className="absolute right-3 top-3 flex flex-col gap-1 rounded-lg border border-zinc-200 bg-white/90 p-1 shadow-sm backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+        <ToolBtn label="Acercar" onClick={() => zoomBy(1.3)}>＋</ToolBtn>
+        <ToolBtn label="Alejar" onClick={() => zoomBy(1 / 1.3)}>－</ToolBtn>
+        <ToolBtn label="Ajustar a pantalla" onClick={fit}>⤢</ToolBtn>
+        <ToolBtn label="Reorganizar" onClick={relayout}>⟳</ToolBtn>
+      </div>
+
+      {/* Leyenda de tipos */}
+      {legend.length > 0 && (
+        <div className="absolute bottom-3 left-3 flex flex-col gap-1 rounded-lg border border-zinc-200 bg-white/90 p-2.5 text-xs shadow-sm backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+          {legend.map((l) => (
+            <span key={l.label} className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color }} />
+              <span className="text-zinc-600 dark:text-zinc-300">{l.label}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <span className="absolute bottom-3 right-3 rounded-md bg-zinc-500/10 px-2 py-1 text-[11px] text-zinc-400">
+        doble click en un nodo para expandir
+      </span>
+    </div>
+  );
+}
+
+function ToolBtn({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className="flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-zinc-600 transition-colors hover:bg-amber-500/15 hover:text-amber-600 dark:text-zinc-300 dark:hover:text-amber-400"
+    >
+      {children}
+    </button>
   );
 }

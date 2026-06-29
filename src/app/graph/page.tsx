@@ -37,8 +37,8 @@ function GraphInner() {
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Explorador del grafo</h1>
         <p className="text-sm text-zinc-500">
-          Centro: <span className="font-mono">{path}</span> · click en un nodo para ver sus
-          conexiones y seguir explorando.
+          Centro: <span className="font-mono">{path}</span> · pasá el mouse para resaltar vecinos,
+          click para ver el detalle, doble click para expandir desde ese nodo.
         </p>
       </header>
 
@@ -54,7 +54,12 @@ function GraphInner() {
               {graphQ.error instanceof Error ? graphQ.error.message : "Error al cargar el grafo."}
             </div>
           ) : graphQ.data ? (
-            <GraphExplorer graph={graphQ.data} centerId={path} onSelect={setSelected} />
+            <GraphExplorer
+              graph={graphQ.data}
+              centerId={path}
+              onSelect={setSelected}
+              onExplore={explore}
+            />
           ) : (
             <div className="h-[560px] animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900" />
           )}

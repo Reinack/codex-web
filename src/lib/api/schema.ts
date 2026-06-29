@@ -179,7 +179,12 @@ export type NoteData = z.infer<typeof NoteSchema>;
 
 // --- GET /api/matchup?me=&vs=&map=  (Matchup Lab) --------------------------
 const MatchupCivSchema = z
-  .object({ title: z.string(), path: z.string(), aliases: z.array(z.string()).nullable().default(null) })
+  .object({
+    title: z.string(),
+    path: z.string(),
+    slug: z.string(),
+    aliases: z.array(z.string()).nullable().default(null),
+  })
   .catchall(z.unknown());
 const CounterEdgeSchema = z
   .object({
@@ -202,6 +207,15 @@ const KitSchema = z
       .default([]),
   })
   .catchall(z.unknown());
+const PhosphorSchema = z
+  .object({
+    civ: z.string(),
+    tier: z.string(),
+    uu: z.string().nullable().optional(),
+    strength: z.string(), // "fuerte" | "viable" | "débil" | "defensivo"
+    defensive: z.boolean().optional(),
+  })
+  .catchall(z.unknown());
 export const MatchupSchema = z
   .object({
     me: MatchupCivSchema,
@@ -222,9 +236,18 @@ export const MatchupSchema = z
       .default([]),
     plan: z.array(z.string()).default([]),
     planVs: z.array(z.string()).default([]),
+    // Alerta de Phosphor Rush (FC all-in Arabia, tier list de Red Fosforu).
+    // optional: el backend de Render puede no tenerlo hasta el próximo deploy.
+    phosphorRush: z
+      .object({
+        me: PhosphorSchema.nullable().default(null),
+        vs: PhosphorSchema.nullable().default(null),
+      })
+      .optional(),
   })
   .catchall(z.unknown());
 export type Matchup = z.infer<typeof MatchupSchema>;
+export type PhosphorTier = z.infer<typeof PhosphorSchema>;
 export type CounterEdge = z.infer<typeof CounterEdgeSchema>;
 
 // --- GET /api/civ-radar/:slug  (perfil de fuerza, generado desde el vault) --
