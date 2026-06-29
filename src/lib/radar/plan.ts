@@ -5,6 +5,10 @@ import { CATEGORY_AXES } from "./data";
 // del grafo de counters y es simétrico entre civs— esto lee los ejes del radar,
 // que SON los puntos fuertes/débiles propios de cada civ → el texto varía por civ.
 //
+// El objetivo del texto es sonar como un coach: frases completas, segunda persona,
+// una idea accionable por bullet. Los números (x/10) van entre paréntesis como
+// referencia, no como protagonistas.
+//
 // Índices (ver lib/radar/data.ts):
 //   category: 0 Infantería · 1 Caballería · 2 Arqueros · 3 Asedio · 4 Naval · 5 Monjes · 6 Defensa · 7 Pólvora
 //   phase:    0 Dark · 1 Feudal · 2 Castle · 3 Imperial · 4 Abierto · 5 Cerrado · 6 Agua · 7 Nómada
@@ -13,17 +17,26 @@ type RadarLike = { phase: number[]; category: number[] };
 
 const AGE_LABELS = ["Dark", "Feudal", "Castle", "Imperial"] as const;
 
-// Consejo asociado a cada debilidad de categoría (índice → texto).
+// Consejo asociado a cada debilidad de categoría (índice → texto accionable).
 const WEAK_ADVICE: Record<number, string> = {
-  0: "no uses infantería como núcleo",
-  1: "sin caballería te van a raidear → pikes, muro y buena posición",
-  2: "evitá pelear a distancia; buscá melee y cerrar rápido",
-  3: "asedio débil → sufrís contra muros/posiciones; presioná antes o usá monjes (Redemption)",
-  4: "flojo en agua → evitá mapas acuáticos o forzá el desembarco",
-  5: "monjes pobres → cuidado con reliquias y conversiones rivales",
-  6: "poca defensa → vulnerable a castle drop y tower rush; vigilá el scouting",
-  7: "sin pólvora → el late game a distancia es del rival",
+  0: "no apoyes tu ejército en infantería; sirve de relleno barato, no de núcleo",
+  1: "casi no tenés caballería, así que te van a raidear los aldeanos: hacé pikes, muro y elegí bien dónde plantarte",
+  2: "tus arqueros no asustan a nadie; cerrá distancia con melee y ganá el cuerpo a cuerpo",
+  3: "tu asedio es flojo, vas a sufrir contra muros y posiciones: rompé antes con presión o convertí con monjes",
+  4: "sos débil en el agua: evitá mapas acuáticos o jugá para forzar el desembarco cuanto antes",
+  5: "tus monjes son pobres: cuidá las reliquias y no regales conversiones al rival",
+  6: "tenés poca defensa, sos vulnerable a castle drops y tower rush: mantené el scouting prendido",
+  7: "no tenés pólvora, así que el late game a distancia es del rival; cerrá la partida antes de llegar ahí",
 };
+
+// Descriptor cualitativo para un valor de eje (1–10).
+function tier(v: number): string {
+  if (v >= 9) return "élite";
+  if (v >= 7) return "fuerte";
+  if (v >= 5) return "correcto";
+  if (v >= 3) return "flojo";
+  return "muy flojo";
+}
 
 export type RadarBrief = { plan: string[]; threats: string[] };
 
@@ -39,13 +52,19 @@ export function buildRadarPlan(me: RadarLike, opp?: RadarLike | null): RadarBrie
     .map((v, i) => ({ v, i, label: CATEGORY_AXES[i] as string }))
     .sort((a, b) => b.v - a.v);
   const tops = ranked.filter((x) => x.v >= 7).slice(0, 3);
-  if (tops.length) {
+  if (tops.length === 1) {
     plan.push(
-      `Tu fuerza: ${tops.map((t) => `${t.label} (${t.v})`).join(" · ")} → armá la composición alrededor de esto.`,
+      `Tu mayor fortaleza es ${tops[0].label.toLowerCase()} (${tops[0].v}/10): construí el ejército alrededor de eso.`,
+    );
+  } else if (tops.length >= 2) {
+    const names = tops.map((t) => t.label.toLowerCase());
+    const last = names.pop();
+    plan.push(
+      `Tu identidad es ${names.join(", ")} y ${last} — apoyate en esos brazos y combinalos.`,
     );
   } else {
     plan.push(
-      `Sin un eje dominante; lo mejor es ${ranked[0].label} (${ranked[0].v}). Jugá flexible y adaptá al rival.`,
+      `No tenés un brazo dominante; lo más sólido es ${ranked[0].label.toLowerCase()} (${ranked[0].v}/10). Jugá flexible y leé lo que arma el rival.`,
     );
   }
 
@@ -55,27 +74,37 @@ export function buildRadarPlan(me: RadarLike, opp?: RadarLike | null): RadarBrie
   const castle = ph[2];
   const imp = ph[3];
   if (peak.i <= 1 && peak.v >= 7) {
-    plan.push(`Pico temprano (${peak.label} ${peak.v}) → presioná pronto, no alargues el juego.`);
+    plan.push(
+      `Tu pico es temprano (${peak.label}, ${peak.v}/10): presioná apenas puedas y no dejes que la partida se alargue.`,
+    );
   } else if (peak.label === "Imperial" || imp >= 9) {
-    plan.push(`Escalás a Imperial (${imp}) → fast-imp / late game es tu plan; sobreviví el early.`);
+    plan.push(
+      `Escalás muy bien a Imperial (${imp}/10): tu plan es aguantar el early y dominar el late game.`,
+    );
   } else if (peak.label === "Castle") {
-    plan.push(`Tu pico es Castle (${castle}) → forzá la partida en Castle Age con tu power spike.`);
+    plan.push(
+      `Tu power spike está en Castle Age (${castle}/10): forzá ahí la definición de la partida.`,
+    );
   }
   if (imp <= castle - 2 && imp <= 6) {
-    plan.push(`Decaés en Imperial (${imp} vs Castle ${castle}) → cerrá antes de llegar al late game.`);
+    plan.push(
+      `Te apagás en Imperial (${imp}/10 vs ${castle}/10 en Castle): cerrá la partida antes de llegar al late game.`,
+    );
   }
 
   // 3. Mapa preferido.
   const maps = [
-    { label: "abierto", v: ph[4] },
-    { label: "cerrado", v: ph[5] },
-    { label: "agua", v: ph[6] },
+    { label: "mapas abiertos", v: ph[4] },
+    { label: "mapas cerrados", v: ph[5] },
+    { label: "el agua", v: ph[6] },
     { label: "nómada", v: ph[7] },
   ];
   const bestMap = maps.reduce((a, b) => (b.v > a.v ? b : a));
   const worstMap = maps.reduce((a, b) => (b.v < a.v ? b : a));
   if (bestMap.v - worstMap.v >= 3) {
-    plan.push(`Mapa: fuerte en ${bestMap.label} (${bestMap.v}), flojo en ${worstMap.label} (${worstMap.v}).`);
+    plan.push(
+      `Te sentís cómodo en ${bestMap.label} (${bestMap.v}/10) y sufrís en ${worstMap.label} (${worstMap.v}/10): elegí o vetá los mapas con eso en mente.`,
+    );
   }
 
   // --- AMENAZAS: ejes BAJOS propios + ejes ALTOS del rival ----------------
@@ -84,8 +113,10 @@ export function buildRadarPlan(me: RadarLike, opp?: RadarLike | null): RadarBrie
     .filter((x) => x.v <= 3)
     .sort((a, b) => a.v - b.v)
     .slice(0, 2);
-  for (const w of coreWeak) threats.push(`${CATEGORY_AXES[w.i]} ${w.v}: ${WEAK_ADVICE[w.i]}.`);
-  if (cat[4] <= 2) threats.push(`${CATEGORY_AXES[4]} ${cat[4]}: ${WEAK_ADVICE[4]}.`);
+  for (const w of coreWeak) {
+    threats.push(`${CATEGORY_AXES[w.i]} (${w.v}/10): ${WEAK_ADVICE[w.i]}.`);
+  }
+  if (cat[4] <= 2) threats.push(`${CATEGORY_AXES[4]} (${cat[4]}/10): ${WEAK_ADVICE[4]}.`);
 
   if (opp) {
     const oppTops = opp.category
@@ -93,12 +124,20 @@ export function buildRadarPlan(me: RadarLike, opp?: RadarLike | null): RadarBrie
       .filter((x) => x.v >= 8)
       .sort((a, b) => b.v - a.v)
       .slice(0, 2);
-    for (const o of oppTops) threats.push(`El rival domina ${o.label} (${o.v}) → preparate a contrarrestarlo.`);
+    for (const o of oppTops) {
+      threats.push(
+        `El rival es ${tier(o.v)} en ${o.label.toLowerCase()} (${o.v}/10): tené listo cómo contrarrestarlo desde el principio.`,
+      );
+    }
     if (opp.phase[3] >= 8 && imp <= opp.phase[3] - 2) {
-      threats.push(`El rival escala mejor a Imperial (${opp.phase[3]} vs tu ${imp}) → evitá un late game parejo.`);
+      threats.push(
+        `El rival escala mejor a Imperial (${opp.phase[3]}/10 vs tu ${imp}/10): no busques un late game parejo, definí antes.`,
+      );
     }
   }
 
-  if (!threats.length) threats.push("Sin debilidades marcadas en el radar — jugá tu plan con confianza.");
+  if (!threats.length) {
+    threats.push("No tenés agujeros marcados en el radar: jugá tu plan con confianza.");
+  }
   return { plan, threats };
 }

@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafaf9;
+  --foreground: #1c1917;
+  /* Acento ámbar (vibe AoE2/pergamino) reutilizable. */
+  --accent: #d97706;
+  --accent-soft: #f59e0b;
 }
 
 @theme inline {
@@ -14,20 +17,75 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #0a0a0b;
     --foreground: #ededed;
+    --accent: #f59e0b;
+    --accent-soft: #fbbf24;
   }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  /* Sutil halo ámbar (vibe AoE2/pergamino) que no molesta la lectura. */
-  background-image: radial-gradient(
-    60rem 30rem at 50% -10rem,
-    color-mix(in oklab, #f59e0b 12%, transparent),
-    transparent
-  );
+  /* Doble halo ámbar + tinte frío inferior: da profundidad de "sala de mando"
+     sin estorbar la lectura. */
+  background-image:
+    radial-gradient(
+      55rem 28rem at 50% -8rem,
+      color-mix(in oklab, var(--accent-soft) 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      40rem 22rem at 100% 0,
+      color-mix(in oklab, #0ea5e9 7%, transparent),
+      transparent 70%
+    );
   background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Tipografía: títulos un poco más apretados, números tabulares para stats. */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
+}
+
+/* Selección con el acento de la marca. */
+::selection {
+  background: color-mix(in oklab, var(--accent-soft) 35%, transparent);
+}
+
+/* Scrollbar discreta y temática (Firefox + WebKit). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--accent-soft) 40%, transparent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--accent-soft) 35%, transparent);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--accent-soft) 55%, transparent);
+  background-clip: padding-box;
+}
+
+/* Utilidad de panel con borde+blur reutilizable en las vistas. */
+@utility panel {
+  border-radius: 0.875rem;
+  border-width: 1px;
+  border-color: color-mix(in oklab, var(--foreground) 12%, transparent);
+  background: color-mix(in oklab, var(--background) 80%, white 6%);
+  backdrop-filter: blur(4px);
 }
