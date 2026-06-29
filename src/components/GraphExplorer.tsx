@@ -8,6 +8,7 @@ import cytoscape, {
 } from "cytoscape";
 import fcose from "cytoscape-fcose";
 import type { GraphData } from "@/lib/api/schema";
+import { relLabel } from "@/lib/graph/rels";
 
 // Registrar el layout force-directed (idempotente entre HMR/recargas).
 let fcoseRegistered = false;
@@ -117,7 +118,7 @@ export function GraphExplorer({
       },
     }));
     const edges: EdgeDefinition[] = graph.edges.map((e, i) => ({
-      data: { id: `e${i}`, source: e.from, target: e.to, label: e.rel ?? "" },
+      data: { id: `e${i}`, source: e.from, target: e.to, label: relLabel(e.rel) },
     }));
 
     const cy = cytoscape({

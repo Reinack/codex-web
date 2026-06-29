@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchSearch } from "@/lib/api/explore-client";
 import type { SearchResult } from "@/lib/api/schema";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 // Búsqueda global ES/EN sobre el grafo (título + alias). Debounce 300ms.
 // Civs → ficha de civ; resto (unidades/techs/estrategias) → explorador de grafo.
 export function GlobalSearch() {
   const router = useRouter();
+  const t = useT();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -60,7 +62,7 @@ export function GlobalSearch() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
-        placeholder="Buscar: Hostigador, Aztecas…"
+        placeholder={t("header.searchPlaceholder")}
         className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900"
       />
       {open && (loading || results.length > 0 || q.trim().length >= 2) && (

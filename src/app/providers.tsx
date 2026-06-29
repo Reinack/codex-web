@@ -2,9 +2,10 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
 
-// Provider de TanStack Query. Vive en un Client Component porque usa contexto y
-// estado del cliente. El QueryClient se crea una sola vez por sesión de browser.
+// Providers de cliente: TanStack Query + i18n. Viven en un Client Component porque
+// usan contexto y estado del cliente. El QueryClient se crea una vez por sesión.
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
     () =>
@@ -14,5 +15,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   );
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <I18nProvider>{children}</I18nProvider>
+    </QueryClientProvider>
+  );
 }

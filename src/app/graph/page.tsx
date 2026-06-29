@@ -6,9 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { fetchGraph, fetchNote, fetchCivsClient } from "@/lib/api/explore-client";
 import { GraphExplorer } from "@/components/GraphExplorer";
-import { pathToSlug } from "@/lib/api/schema";
+import { pathToSlug, type NoteData } from "@/lib/api/schema";
+import { relLabel } from "@/lib/graph/rels";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 function GraphInner() {
+  const t = useT();
   const router = useRouter();
   const params = useSearchParams();
   const path = params.get("path") ?? "";
@@ -35,7 +38,7 @@ function GraphInner() {
   return (
     <main className="flex flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Explorador del grafo</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
         <p className="text-sm text-zinc-500">
           Centro: <span className="font-mono">{path}</span> · pasá el mouse para resaltar vecinos,
           click para ver el detalle, doble click para expandir desde ese nodo.
@@ -67,7 +70,7 @@ function GraphInner() {
 
         <aside className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">
           {!selected ? (
-            <p className="text-zinc-500">Clickeá un nodo para ver el detalle.</p>
+            <p className="text-zinc-500">{t("graph.clickNode")}</p>
           ) : noteQ.isLoading ? (
             <p className="text-zinc-500">cargando…</p>
           ) : noteQ.data ? (
@@ -79,35 +82,18 @@ function GraphInner() {
                   onClick={() => explore(selected)}
                   className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
                 >
-                  Explorar
+                  {t("graph.explore")}
                 </button>
                 {selected.startsWith("civs/") && (
                   <Link
                     href={`/civs/${pathToSlug(selected).toLowerCase()}`}
                     className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700"
                   >
-                    Ver ficha
+                    {t("graph.viewCard")}
                   </Link>
                 )}
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-zinc-500">
-                  Conexiones ({noteQ.data.neighbors.length})
-                </span>
-                <ul className="flex max-h-72 flex-col gap-1 overflow-auto">
-                  {noteQ.data.neighbors.map((nb) => (
-                    <li key={nb.path}>
-                      <button
-                        onClick={() => setSelected(nb.path)}
-                        className="flex w-full items-center justify-between gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-amber-500/10"
-                      >
-                        <span className="truncate">{nb.title}</span>
-                        <span className="shrink-0 text-zinc-400">{nb.rel}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <NeighborGroups neighbors={noteQ.data.neighbors} onPick={setSelected} />
             </>
           ) : (
             <p className="text-zinc-500">Sin datos del nodo.</p>
@@ -118,14 +104,77 @@ function GraphInner() {
   );
 }
 
+// Orden de relevancia: las relaciones tipadas (counters, UU, tier…) antes que el
+// genérico "relacionado con" (LINKS_TO).
+const REL_ORDER = [
+  "counterea a",
+  "unidad única de",
+  "tecnología única de",
+  "se mejora a",
+  "rankeada en",
+  "define",
+  "tiene",
+];
+
+function NeighborGroups({
+  neighbors,
+  onPick,
+}: {
+  neighbors: NoteData["neighbors"];
+  onPick: (path: string) => void;
+}) {
+  const t = useT();
+  const groups = new Map<string, NoteData["neighbors"]>();
+  for (const nb of neighbors) {
+    const k = relLabel(nb.rel);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(nb);
+  }
+  const entries = [...groups.entries()].sort((a, b) => {
+    const ia = REL_ORDER.indexOf(a[0]);
+    const ib = REL_ORDER.indexOf(b[0]);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+
+  if (entries.length === 0) {
+    return <p className="text-xs text-zinc-400">{t("graph.noConnections")}</p>;
+  }
+
+  return (
+    <div className="flex max-h-80 flex-col gap-3 overflow-auto">
+      {entries.map(([label, items]) => (
+        <div key={label} className="flex flex-col gap-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+            {label} ({items.length})
+          </span>
+          <ul className="flex flex-col gap-0.5">
+            {items.map((nb) => (
+              <li key={nb.path}>
+                <button
+                  onClick={() => onPick(nb.path)}
+                  className="flex w-full items-center justify-between gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-amber-500/10"
+                >
+                  <span className="truncate">{nb.title}</span>
+                  {nb.type && <span className="shrink-0 text-zinc-400">{nb.type}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function CivPicker({ onPick }: { onPick: (path: string) => void }) {
+  const t = useT();
   const { data, isLoading } = useQuery({ queryKey: ["civs"], queryFn: fetchCivsClient });
   return (
     <main className="flex flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Explorador del grafo</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
         <p className="text-sm text-zinc-500">
-          Elegí una civilización para empezar a explorar el grafo de conocimiento.
+          {t("graph.pickCiv")}
         </p>
       </header>
       {isLoading ? (

@@ -4,11 +4,12 @@ import { useState } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCivsClient, fetchMatchup, fetchCivRadar } from "@/lib/api/explore-client";
-import type { CounterEdge, PhosphorTier } from "@/lib/api/schema";
+import type { CounterEdge, PhosphorTier, MissingUnit } from "@/lib/api/schema";
 import { civEmblemUrl } from "@/lib/img";
 import { RadarChart } from "@/components/RadarChart";
 import { PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
 import { buildRadarPlan } from "@/lib/radar/plan";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 const ME_COLOR = "#f59e0b";
 const VS_COLOR = "#0ea5e9";
@@ -98,6 +99,7 @@ function Legend({
 }
 
 export default function MatchupsPage() {
+  const t = useT();
   const civsQ = useQuery({ queryKey: ["civs"], queryFn: fetchCivsClient });
   const [me, setMe] = useState("");
   const [vs, setVs] = useState("");
@@ -140,12 +142,11 @@ export default function MatchupsPage() {
     <main className="flex flex-col gap-8">
       <header className="flex flex-col gap-2">
         <span className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
-          Matchup Lab
+          {t("matchups.eyebrow")}
         </span>
-        <h1 className="text-3xl font-bold tracking-tight">Cruzá dos civilizaciones</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("matchups.title")}</h1>
         <p className="max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
-          Plan de juego, fortalezas y debilidades por radar, counters a favor y en contra,
-          y las notas del grafo que mencionan a ambas.
+          {t("matchups.subtitle")}
         </p>
       </header>
 
@@ -153,10 +154,10 @@ export default function MatchupsPage() {
         onSubmit={run}
         className="panel grid gap-3 p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end"
       >
-        <CivSelect label="Tu civilización" value={me} onChange={setMe} options={civs} accent="me" />
-        <CivSelect label="Rival" value={vs} onChange={setVs} options={civs} accent="vs" />
+        <CivSelect label={t("matchups.yourCiv")} value={me} onChange={setMe} options={civs} accent="me" />
+        <CivSelect label={t("matchups.rival")} value={vs} onChange={setVs} options={civs} accent="vs" />
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-zinc-500">Mapa (opcional)</label>
+          <label className="text-xs font-medium text-zinc-500">{t("matchups.mapOptional")}</label>
           <input
             value={map}
             onChange={(e) => setMap(e.target.value)}
@@ -169,17 +170,17 @@ export default function MatchupsPage() {
           disabled={!me || !vs || me === vs}
           className="rounded-lg bg-gradient-to-b from-amber-400 to-amber-500 px-5 py-2 text-sm font-semibold text-amber-950 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Analizar
+          {t("common.analyze")}
         </button>
       </form>
       {me && vs && me === vs && (
-        <p className="-mt-4 text-xs text-rose-500">Elegí dos civilizaciones distintas.</p>
+        <p className="-mt-4 text-xs text-rose-500">{t("matchups.distinct")}</p>
       )}
 
       {m.isFetching && (
         <div className="flex items-center gap-3 text-sm text-zinc-500">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
-          Analizando el matchup…
+          {t("matchups.analyzing")}
         </div>
       )}
       {m.isError && (
@@ -197,13 +198,6 @@ export default function MatchupsPage() {
             vsSlug={m.data.vs.slug}
             map={submitted?.map}
           />
-
-          {m.data.phosphorRush && (
-            <PhosphorAlert
-              me={m.data.phosphorRush.me}
-              vs={m.data.phosphorRush.vs}
-            />
-          )}
 
           <MatchupRadars
             me={m.data.me.title}
@@ -228,13 +222,28 @@ export default function MatchupsPage() {
                 bullets={vsBrief ? vsBrief.plan : m.data.planVs}
                 tone="neutral"
               />
-              <PlanCard
+              <TacticalNotesCard
                 title={`Notas tácticas — ${m.data.me.title}`}
-                bullets={m.data.plan}
-                tone="accent"
+                plan={m.data.plan}
+                weaknesses={m.data.traits?.me.weaknesses ?? []}
+                missing={m.data.missing?.me ?? []}
               />
             </div>
           </Section>
+
+          {m.data.phosphorRush &&
+            (m.data.phosphorRush.me || m.data.phosphorRush.vs) && (
+              <Section title="Phosphor Rush · FC Arabia" hint="tier list Red Fosforu">
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {m.data.phosphorRush.me && (
+                    <PhosphorCard side="me" data={m.data.phosphorRush.me} />
+                  )}
+                  {m.data.phosphorRush.vs && (
+                    <PhosphorCard side="vs" data={m.data.phosphorRush.vs} />
+                  )}
+                </div>
+              </Section>
+            )}
 
           <Section title="Counters">
             <div className="grid gap-4 lg:grid-cols-2">
@@ -243,12 +252,16 @@ export default function MatchupsPage() {
                 subtitle={`${m.data.me.title} le gana a ${m.data.vs.title}`}
                 edges={m.data.counters.answers}
                 tone="good"
+                notes={(m.data.missing?.vs ?? []).map(
+                  (x) => `${m.data.vs.title} no tiene ${x.unit}: ${x.opp}`,
+                )}
               />
               <CounterCard
                 title="Amenazas"
                 subtitle={`${m.data.vs.title} te counterea`}
                 edges={m.data.counters.threats}
                 tone="bad"
+                notes={(m.data.missing?.me ?? []).map((x) => x.self)}
               />
             </div>
           </Section>
@@ -344,47 +357,41 @@ const PHOSPHOR_TIER_COLOR: Record<string, string> = {
   D: "bg-zinc-500/15 text-zinc-500",
 };
 
-function PhosphorAlert({ me, vs }: { me: PhosphorTier | null; vs: PhosphorTier | null }) {
-  if (!me && !vs) return null;
+// Una tarjeta de Phosphor Rush por civ: "me" en clave oportunidad, "vs" en clave
+// amenaza. El titular varía según el lado y la fuerza del FC de esa civ.
+function PhosphorCard({ side, data }: { side: "me" | "vs"; data: PhosphorTier }) {
+  const strong = data.strength === "fuerte";
+  const frame = strong
+    ? side === "vs"
+      ? "border-rose-400/50 bg-rose-500/5"
+      : "border-amber-400/50 bg-amber-500/5"
+    : "border-zinc-300/60 bg-zinc-500/5 dark:border-zinc-700/60";
 
-  // Severidad del banner: amenaza (rival fuerte) > oportunidad (vos fuerte) > info.
-  const vsStrong = vs?.strength === "fuerte";
-  const meStrong = me?.strength === "fuerte";
-  const tone = vsStrong ? "threat" : meStrong ? "opportunity" : "info";
-  const frame = {
-    threat: "border-rose-400/50 bg-rose-500/5",
-    opportunity: "border-amber-400/50 bg-amber-500/5",
-    info: "border-zinc-300/60 bg-zinc-500/5 dark:border-zinc-700/60",
-  }[tone];
-
+  const sideLabel = side === "me" ? "Tu civ" : "Rival";
+  const ref = `${data.civ} (${data.tier}-tier${data.uu ? `, ${data.uu}` : ""})`;
   let headline: string;
-  if (vsStrong) {
-    headline = `Ojo: ${vs!.civ} puede abrir con un Phosphor Rush fuerte (${vs!.tier}-tier${vs!.uu ? `, ${vs!.uu}` : ""}). Preparate para defender el Fast Castle.`;
-  } else if (meStrong) {
-    headline = `Tenés un Phosphor Rush fuerte con ${me!.civ} (${me!.tier}-tier${me!.uu ? `, ${me!.uu}` : ""}): es un buen all-in de FC en Arabia.`;
-  } else if (vs?.defensive) {
-    headline = `${vs.civ} no empuja con FC, pero escala en defensa (Castle drop + boom): no esperes un all-in temprano.`;
+  if (data.defensive) {
+    headline =
+      side === "vs"
+        ? `${data.civ} no empuja con FC: escala en defensa (Castle drop + boom), no esperes un all-in temprano.`
+        : `Con ${data.civ} no empujás con FC: tu fuerte es defender y boomear.`;
+  } else if (strong) {
+    headline =
+      side === "vs"
+        ? `Ojo: ${ref} puede abrir con un Phosphor Rush fuerte. Preparate para defender el Fast Castle.`
+        : `Tenés un Phosphor Rush fuerte con ${ref}: buen all-in de FC en Arabia.`;
+  } else if (data.strength === "viable") {
+    headline =
+      side === "vs"
+        ? `${data.civ} puede intentar un FC, pero no es su punto fuerte.`
+        : `Phosphor Rush viable con ${data.civ}, aunque no es tu mejor plan.`;
   } else {
-    headline = "Ninguna de las dos civs destaca para un Phosphor Rush en Arabia.";
+    headline =
+      side === "vs"
+        ? `Difícil que ${data.civ} te haga un Phosphor Rush serio (${data.tier}-tier).`
+        : `Phosphor Rush flojo con ${data.civ} (${data.tier}-tier): mejor otro plan.`;
   }
 
-  return (
-    <section className={`rounded-xl border p-4 ${frame}`}>
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-base">⚡</span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide">Phosphor Rush · FC Arabia</h2>
-        <span className="text-xs text-zinc-400">tier list Red Fosforu</span>
-      </div>
-      <p className="mb-3 text-sm text-zinc-700 dark:text-zinc-200">{headline}</p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {me && <PhosphorRow side="Tu civ" data={me} />}
-        {vs && <PhosphorRow side="Rival" data={vs} />}
-      </div>
-    </section>
-  );
-}
-
-function PhosphorRow({ side, data }: { side: string; data: PhosphorTier }) {
   const strengthColor =
     data.strength === "fuerte"
       ? "text-amber-600 dark:text-amber-400"
@@ -393,20 +400,23 @@ function PhosphorRow({ side, data }: { side: string; data: PhosphorTier }) {
         : data.strength === "defensivo"
           ? "text-sky-600 dark:text-sky-400"
           : "text-zinc-500";
+
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-white/50 px-3 py-2 text-sm dark:bg-zinc-900/40">
-      <span className="w-12 shrink-0 text-xs uppercase tracking-wide text-zinc-400">{side}</span>
-      <span
-        className={`rounded-full px-2 py-0.5 text-xs font-bold ${PHOSPHOR_TIER_COLOR[data.tier] ?? "bg-zinc-500/15 text-zinc-500"}`}
-      >
-        {data.tier}
-      </span>
-      <span className="font-medium text-zinc-800 dark:text-zinc-100">{data.civ}</span>
-      {data.uu && <span className="truncate text-xs text-zinc-500">{data.uu}</span>}
-      <span className={`ml-auto shrink-0 text-xs font-semibold capitalize ${strengthColor}`}>
-        {data.strength}
-      </span>
-    </div>
+    <section className={`flex flex-col gap-3 rounded-xl border p-4 ${frame}`}>
+      <div className="flex items-center gap-2">
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-bold ${PHOSPHOR_TIER_COLOR[data.tier] ?? "bg-zinc-500/15 text-zinc-500"}`}
+        >
+          {data.tier}
+        </span>
+        <span className="font-semibold">{data.civ}</span>
+        <span className="text-xs uppercase tracking-wide text-zinc-400">{sideLabel}</span>
+        <span className={`ml-auto text-xs font-semibold capitalize ${strengthColor}`}>
+          {data.strength}
+        </span>
+      </div>
+      <p className="text-sm text-zinc-700 dark:text-zinc-200">{headline}</p>
+    </section>
   );
 }
 
@@ -445,6 +455,7 @@ function CivSelect({
   options: { title: string }[];
   accent?: "me" | "vs";
 }) {
+  const t = useT();
   const ring =
     accent === "me"
       ? "focus:border-amber-400 focus:ring-amber-400/20"
@@ -459,7 +470,7 @@ function CivSelect({
         onChange={(e) => onChange(e.target.value)}
         className={`rounded-lg border border-zinc-300 bg-white/80 px-3 py-2 text-sm outline-none transition-colors focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900/80 ${ring}`}
       >
-        <option value="">Elegí…</option>
+        <option value="">{t("matchups.choose")}</option>
         {options.map((c) => (
           <option key={c.title} value={c.title}>
             {c.title}
@@ -510,13 +521,19 @@ function CounterCard({
   subtitle,
   edges,
   tone,
+  notes = [],
 }: {
   title: string;
   subtitle: string;
   edges: CounterEdge[];
   tone: "good" | "bad";
+  notes?: string[];
 }) {
   const dot = tone === "good" ? "bg-emerald-500" : "bg-rose-500";
+  const noteTone =
+    tone === "good"
+      ? "text-emerald-700 dark:text-emerald-300"
+      : "text-rose-700 dark:text-rose-300";
   return (
     <section className="panel flex flex-col gap-3 p-4">
       <div>
@@ -546,6 +563,76 @@ function CounterCard({
             </li>
           ))}
         </ul>
+      )}
+      {notes.length > 0 && (
+        <ul className="flex flex-col gap-1.5 border-t border-zinc-200 pt-2 text-xs dark:border-zinc-800">
+          {notes.map((n, i) => (
+            <li key={i} className={`flex gap-1.5 ${noteTone}`}>
+              <span className="shrink-0">›</span>
+              <span>{n}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// Notas tácticas + debilidades + unidades faltantes de la civ propia.
+function TacticalNotesCard({
+  title,
+  plan,
+  weaknesses,
+  missing,
+}: {
+  title: string;
+  plan: string[];
+  weaknesses: string[];
+  missing: MissingUnit[];
+}) {
+  return (
+    <section className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-white/70 p-4 pl-5 dark:bg-zinc-900/50">
+      <span className="absolute inset-y-0 left-0 w-1 bg-amber-500" />
+      <h3 className="mb-2 text-sm font-semibold">{title}</h3>
+      {plan.length === 0 && weaknesses.length === 0 && missing.length === 0 ? (
+        <p className="text-sm text-zinc-400">Sin notas para este cruce.</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {plan.length > 0 && (
+            <ul className="flex flex-col gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+              {plan.map((b, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="mt-0.5 shrink-0 text-amber-500">›</span>
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {(missing.length > 0 || weaknesses.length > 0) && (
+            <div className="flex flex-col gap-1.5 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+              <span className="text-xs font-medium uppercase tracking-wide text-rose-500">
+                Huecos y unidades faltantes
+              </span>
+              <ul className="flex flex-col gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+                {missing.map((mu, i) => (
+                  <li key={`m${i}`} className="flex gap-1.5">
+                    <span className="shrink-0 text-rose-500">▾</span>
+                    <span>
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">{mu.unit}:</span>{" "}
+                      {mu.self.replace(/^sin [^:]+:\s*/i, "")}
+                    </span>
+                  </li>
+                ))}
+                {weaknesses.map((w, i) => (
+                  <li key={`w${i}`} className="flex gap-1.5">
+                    <span className="shrink-0 text-zinc-400">·</span>
+                    <span>{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </section>
   );

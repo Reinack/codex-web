@@ -121,6 +121,17 @@ export const CounterGraphSchema = z.object({
 export type CounterGraph = z.infer<typeof CounterGraphSchema>;
 export type CyNodeData = z.infer<typeof CyNodeDataSchema>;
 
+// GET /api/civ-units?civ= → líneas construibles + unidades únicas de una civ.
+export const CivUnitsSchema = z.object({
+  civ: z.string(),
+  slug: z.string(),
+  units: z.array(z.string()).default([]),
+  uniqueUnits: z
+    .array(z.object({ title: z.string(), treeId: z.string().nullable().optional() }).catchall(z.unknown()))
+    .default([]),
+});
+export type CivUnits = z.infer<typeof CivUnitsSchema>;
+
 // --- GET /api/search?q=...  (título o alias ES/MX) -------------------------
 export const SearchResultSchema = z
   .object({
@@ -216,6 +227,15 @@ const PhosphorSchema = z
     defensive: z.boolean().optional(),
   })
   .catchall(z.unknown());
+const TraitsSchema = z
+  .object({
+    strengths: z.array(z.string()).default([]),
+    weaknesses: z.array(z.string()).default([]),
+  })
+  .catchall(z.unknown());
+const MissingSchema = z
+  .object({ unit: z.string(), self: z.string(), opp: z.string() })
+  .catchall(z.unknown());
 export const MatchupSchema = z
   .object({
     me: MatchupCivSchema,
@@ -244,10 +264,17 @@ export const MatchupSchema = z
         vs: PhosphorSchema.nullable().default(null),
       })
       .optional(),
+    // Fortalezas/Debilidades autorales + unidades faltantes con implicancia.
+    traits: z.object({ me: TraitsSchema, vs: TraitsSchema }).optional(),
+    missing: z
+      .object({ me: z.array(MissingSchema).default([]), vs: z.array(MissingSchema).default([]) })
+      .optional(),
   })
   .catchall(z.unknown());
 export type Matchup = z.infer<typeof MatchupSchema>;
 export type PhosphorTier = z.infer<typeof PhosphorSchema>;
+export type CivTraits = z.infer<typeof TraitsSchema>;
+export type MissingUnit = z.infer<typeof MissingSchema>;
 export type CounterEdge = z.infer<typeof CounterEdgeSchema>;
 
 // --- GET /api/civ-radar/:slug  (perfil de fuerza, generado desde el vault) --
