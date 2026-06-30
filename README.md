@@ -70,3 +70,13 @@ local por HTTP.
 
 GitHub Actions corre `lint` + `typecheck` en cada push/PR. El build de producción
 lo hace Vercel.
+
+## Atribuciones
+
+- Frontend de [aoe2-codex](https://github.com/Reinack/aoe2-codex); consume su API pública.
+- *Age of Empires II* y sus datos de juego son © **Microsoft Corporation**. Proyecto
+  educativo/no comercial sin afiliación con Microsoft.
+
+## Licencia
+
+[MIT](LICENSE) © Reinack
