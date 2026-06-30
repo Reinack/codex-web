@@ -74,7 +74,9 @@ lo hace Vercel.
 ## Atribuciones
 
 - Frontend de [aoe2-codex](https://github.com/Reinack/aoe2-codex); consume su API pública.
-- *Age of Empires II* y sus datos de juego son © **Microsoft Corporation**. Proyecto
+  Las **atribuciones completas** de imágenes, nombres y fuentes de las notas (aoe2techtree,
+  AoE2 Wiki de Fandom CC BY-SA, creadores de contenido) están en ese repositorio.
+- *Age of Empires II* y sus imágenes/datos de juego son © **Microsoft Corporation**. Proyecto
   educativo/no comercial sin afiliación con Microsoft.
 
 ## Licencia
