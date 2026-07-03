@@ -277,6 +277,117 @@ export type CivTraits = z.infer<typeof TraitsSchema>;
 export type MissingUnit = z.infer<typeof MissingSchema>;
 export type CounterEdge = z.infer<typeof CounterEdgeSchema>;
 
+// --- GET /api/eco-catalog  (calculadora de producción: catálogo) -----------
+// Espejo de lib/eco.mjs → catalog(). Se mantiene laxo (.catchall/.passthrough)
+// porque el modelo económico crece; la UI solo consume lo que tipa acá.
+const CostSchema = z.object({
+  food: z.number().default(0),
+  wood: z.number().default(0),
+  gold: z.number().default(0),
+  stone: z.number().default(0),
+});
+export const EcoItemSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    kind: z.enum(["unit", "building"]),
+    category: z.string(),
+    variant: z.string().default("generic"),
+    age: z.string(),
+    cost: CostSchema,
+    time: z.number(),
+    imgPath: z.string().nullable().optional(),
+    timeApprox: z.boolean().optional(),
+  })
+  .passthrough();
+const EcoSourceSchema = z
+  .object({
+    label: z.string(),
+    resource: z.string(),
+    ratePerAge: z.record(z.string(), z.number()),
+    techs: z.array(z.string()).optional(),
+    perUnit: z.string().optional(),
+  })
+  .passthrough();
+const EcoTechSchema = z
+  .object({ name: z.string(), affects: z.array(z.string()).default([]), mod: z.record(z.string(), z.unknown()) })
+  .passthrough();
+export const EcoCatalogSchema = z.object({
+  items: z.array(EcoItemSchema),
+  sources: z.record(z.string(), EcoSourceSchema),
+  defaults: z.record(z.string(), z.record(z.string(), z.unknown())),
+  passive: z.record(z.string(), z.unknown()),
+  supplyTechs: z.record(z.string(), EcoTechSchema),
+  demandTechs: z.record(z.string(), EcoTechSchema).default({}),
+  resources: z.array(z.string()),
+  ages: z.array(z.string()),
+  civs: z.array(z.string()),
+  // Construibilidad por civ (ids de item). Ausente si el backend es viejo.
+  buildable: z.record(z.string(), z.array(z.string())).default({}),
+});
+export type EcoCatalog = z.infer<typeof EcoCatalogSchema>;
+export type EcoItem = z.infer<typeof EcoItemSchema>;
+
+// --- POST /api/production  (calculadora de producción: resultado) ----------
+const PerResourceSchema = z
+  .object({
+    demandPerMin: z.number(),
+    fixedIncomePerMin: z.number().default(0),
+    reseedPerMin: z.number().optional(), // solo madera
+    fillSource: z.string().nullable().default(null),
+    ratePerMin: z.number(),
+    fillVillagers: z.number().nullable(),
+  })
+  .passthrough();
+const ContributorSchema = z.object({
+  source: z.string(),
+  label: z.string(),
+  resource: z.string(),
+  count: z.number(),
+  ratePerMin: z.number(),
+  producedPerMin: z.number(),
+});
+export const ProductionSchema = z
+  .object({
+    input: z.record(z.string(), z.unknown()),
+    perItem: z.array(
+      z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          kind: z.string(),
+          lines: z.number(),
+          cost: CostSchema,
+          time: z.number(),
+          drainPerMin: CostSchema,
+        })
+        .passthrough(),
+    ),
+    perResource: z.object({
+      food: PerResourceSchema,
+      wood: PerResourceSchema,
+      gold: PerResourceSchema,
+      stone: PerResourceSchema,
+    }),
+    contributors: z.array(ContributorSchema).default([]),
+    contributorVillagers: z.number().default(0),
+    fillVillagers: z.number().default(0),
+    total: z.number(),
+    bottleneck: z.string(),
+    reseedWood: z
+      .object({
+        totalPerMin: z.number(),
+        breakdown: z.array(z.object({ source: z.string(), label: z.string(), woodPerMin: z.number() })),
+      })
+      .optional(),
+    passiveIncome: CostSchema,
+    heuristics: z.array(z.string()).default([]),
+    appliedCivMods: z.array(z.record(z.string(), z.unknown())).nullable().default(null),
+  })
+  .passthrough();
+export type Production = z.infer<typeof ProductionSchema>;
+export type ProductionContributor = z.infer<typeof ContributorSchema>;
+
 // --- GET /api/civ-radar/:slug  (perfil de fuerza, generado desde el vault) --
 export const RadarSchema = z.object({
   phase: z.array(z.number()),

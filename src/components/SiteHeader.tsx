@@ -11,6 +11,7 @@ const NAV = [
   { href: "/tree", key: "nav.tree" },
   { href: "/counters", key: "nav.counters" },
   { href: "/matchups", key: "nav.matchups" },
+  { href: "/production", key: "nav.production" },
   { href: "/graph", key: "nav.graph" },
   { href: "/chat", key: "nav.chat" },
 ] as const;
