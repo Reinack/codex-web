@@ -12,6 +12,17 @@ export const REL_LABEL: Record<string, string> = {
   HAS_UNIT: "tiene",
   HAS_TECH: "tiene tech",
   HAS_BUILDING: "tiene edificio",
+  // Aristas de juego derivadas del tech-tree (web/techtree/edges.mjs)
+  AFFECTS: "afecta a",
+  TRAINS: "entrena",
+  RESEARCHES: "investiga",
+  ENABLES: "habilita",
+  // Aristas de meta-juego (rag/codex_rag/import_meta_edges.py)
+  WON: "ganó",
+  RUNNER_UP: "subcampeón en",
+  PARTICIPATED_IN: "participó en",
+  USED_MAP: "usó el mapa",
+  IS_TYPE: "es de tipo",
 };
 
 export function relLabel(rel?: string | null): string {
