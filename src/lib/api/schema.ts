@@ -201,6 +201,8 @@ const CounterEdgeSchema = z
   .object({
     from: z.string(),
     target: z.string(),
+    fromId: z.string().nullable().optional(),
+    toId: z.string().nullable().optional(),
     fromImg: z.string().nullable().optional(),
     targetImg: z.string().nullable().optional(),
     weight: z.number().nullable().optional(),
@@ -236,6 +238,96 @@ const TraitsSchema = z
 const MissingSchema = z
   .object({ unit: z.string(), self: z.string(), opp: z.string() })
   .catchall(z.unknown());
+// "Cómo jugar CONTRA X" — bullets de counter-play ya invertidos (mecánica
+// propia de la civ → consejo para el rival), parseados desde el vault.
+const CounterPlaySchema = z
+  .object({ me: z.array(z.string()).default([]), vs: z.array(z.string()).default([]) })
+  .catchall(z.unknown());
+// Una entrada de "En Matchups Documentados": cita un matchup real/teórico con
+// síntesis táctica propia desde la perspectiva de la civ que la escribió.
+const DocumentedMatchupEntrySchema = z
+  .object({
+    heading: z.string(),
+    matchupFile: z.string().nullable().optional(),
+    opponent: z.string().nullable().optional(),
+    bullets: z.array(z.string()).default([]),
+    recordar: z.string().nullable().optional(),
+  })
+  .catchall(z.unknown());
+const DocumentedMatchupsSchema = z
+  .object({
+    me: z.array(DocumentedMatchupEntrySchema).default([]),
+    vs: z.array(DocumentedMatchupEntrySchema).default([]),
+  })
+  .catchall(z.unknown());
+
+// Bonus de civ aplicado a una línea ("propio"/"ajeno" + etiquetas de bonus).
+const LineBonusSchema = z
+  .object({ tag: z.string().optional(), labels: z.array(z.string()).default([]) })
+  .catchall(z.unknown());
+// Líneas construibles de una civ (top-level `lines.me` / `lines.vs`).
+const CivLineSchema = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    imgKey: z.string().default(""),
+    bonus: LineBonusSchema.nullable().optional(),
+    eco: z.array(z.string()).default([]),
+  })
+  .catchall(z.unknown());
+// Contraparte (unidad rival) de un hueco o riesgo de una línea propia.
+const GapRiskSchema = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    weight: z.number().nullable().optional(),
+    context: z.string().nullable().optional(),
+  })
+  .catchall(z.unknown());
+// Una línea propia analizada: rol, semáforo, huecos que el rival no contesta y
+// riesgos que sí. Base del tablero "dónde pegás / dónde te pegan".
+const ExploitLineSchema = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    role: z.string().nullable().optional(), // gold | trash | siege | support
+    status: z.string().nullable().optional(), // green | yellow | red
+    gaps: z.array(GapRiskSchema).default([]),
+    risks: z.array(GapRiskSchema).default([]),
+    bonus: LineBonusSchema.nullable().optional(),
+    eco: z.array(z.string()).default([]),
+  })
+  .catchall(z.unknown());
+// Combo canónico (military.md): nombre, edad recomendada, por qué, y si en este
+// cruce alguna pieza está en riesgo.
+const RecipeSchema = z
+  .object({
+    name: z.string(),
+    age: z.string().nullable().optional(),
+    why: z.string().nullable().optional(),
+    risky: z.boolean().optional(),
+  })
+  .catchall(z.unknown());
+// Composición sugerida de 3 unidades: oro (línea explotable), trash (cubre el
+// riesgo del oro) y asedio.
+const CompositionSchema = z
+  .object({
+    gold: z.string().nullable().optional(),
+    goldBonus: LineBonusSchema.nullable().optional(),
+    trash: z.string().nullable().optional(),
+    trashBonus: LineBonusSchema.nullable().optional(),
+    trashCovers: z.string().nullable().optional(),
+    siege: z.string().nullable().optional(),
+  })
+  .catchall(z.unknown());
+const ExploitsSchema = z
+  .object({
+    lines: z.array(ExploitLineSchema).default([]),
+    recipes: z.array(RecipeSchema).default([]),
+    composition: CompositionSchema.nullable().default(null),
+  })
+  .catchall(z.unknown());
+
 export const MatchupSchema = z
   .object({
     me: MatchupCivSchema,
@@ -269,13 +361,32 @@ export const MatchupSchema = z
     missing: z
       .object({ me: z.array(MissingSchema).default([]), vs: z.array(MissingSchema).default([]) })
       .optional(),
+    // Counter-play autoral (vault) — "Cómo jugar CONTRA X" de cada lado.
+    counterPlay: CounterPlaySchema.optional(),
+    // Matchups documentados de este cruce específico, uno por perspectiva.
+    documentedMatchups: DocumentedMatchupsSchema.optional(),
+    // Líneas construibles de cada civ (para íconos y lookup de imgKey por id).
+    lines: z
+      .object({ me: z.array(CivLineSchema).default([]), vs: z.array(CivLineSchema).default([]) })
+      .optional(),
+    // Análisis de huecos: qué explotar y qué combos armar. `exploits` es lo tuyo,
+    // `vsExploits` lo del rival (para anticipar su composición probable).
+    exploits: ExploitsSchema.optional(),
+    vsExploits: ExploitsSchema.optional(),
   })
   .catchall(z.unknown());
 export type Matchup = z.infer<typeof MatchupSchema>;
 export type PhosphorTier = z.infer<typeof PhosphorSchema>;
 export type CivTraits = z.infer<typeof TraitsSchema>;
 export type MissingUnit = z.infer<typeof MissingSchema>;
+export type CounterPlay = z.infer<typeof CounterPlaySchema>;
+export type DocumentedMatchupEntry = z.infer<typeof DocumentedMatchupEntrySchema>;
+export type DocumentedMatchups = z.infer<typeof DocumentedMatchupsSchema>;
 export type CounterEdge = z.infer<typeof CounterEdgeSchema>;
+export type CivLine = z.infer<typeof CivLineSchema>;
+export type ExploitLine = z.infer<typeof ExploitLineSchema>;
+export type Recipe = z.infer<typeof RecipeSchema>;
+export type Composition = z.infer<typeof CompositionSchema>;
 
 // --- GET /api/eco-catalog  (calculadora de producción: catálogo) -----------
 // Espejo de lib/eco.mjs → catalog(). Se mantiene laxo (.catchall/.passthrough)
