@@ -1,5 +1,6 @@
 // Mapa imgKey -> ruta de imagen bajo /tree/, vendorizado desde el sub-proyecto
-// del árbol tecnológico (aoe2-codex/web/public/tree/src/data/img_map.js).
+// del árbol tecnológico (aoe2-codex/web/public/tree; desde el Update 185872 los
+// íconos salen de nodes.js / upstream_nodes.js, ya no hay img_map.js).
 // Lo usa el grafo de counters para mostrar el ícono de cada unidad/línea.
 // Se omiten las uniquetech por-civ (todas mapean a los dos íconos genéricos).
 export const IMG_MAP: Record<string, string> = {
@@ -15,7 +16,7 @@ export const IMG_MAP: Record<string, string> = {
   castle: "img/Building/7.png",
   market: "img/Building/16.png",
   tc: "img/Building/28.png",
-  wonder: "img/Building/31.png",
+  wonder: "img/Building/37.png",
 
   // Infantería
   militia: "img/Unit/8.png",
@@ -132,18 +133,19 @@ export const IMG_MAP: Record<string, string> = {
   thirisadai: "img/Unit/387.png",
   catapult_gall: "img/Unit/591.png",
   turtle_ship: "img/Unit/116.png",
-  longboat: "img/Unit/40.png",
+  longboat: "img/Unit/40.png", // renombrado a longship en el Update 185872
+  longship: "img/Unit/40.png",
   caravel_d: "img/Unit/198.png",
 
   // Monastery
-  monk: "img/Unit/33.png",
+  monk: "img/Unit/292.png",
   warrior_priest: "img/Unit/409.png",
   missionary: "img/Unit/107.png",
 
   // Castle
   trebuchet: "img/Unit/29.png",
   petard: "img/Unit/113.png",
-  kipchak_c: "img/Unit/252.png",
+  kipchak_c: "img/Unit/508.png",
   uniquetech1: "img/Tech/33.png",
   uniquetech2: "img/Tech/107.png",
 
