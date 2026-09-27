@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cinzel, Crimson_Pro } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Providers } from "./providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Tipografía de la guía de estilo del árbol: Cinzel (capitales romanas) para
+// títulos y botones, Crimson Pro para el texto.
+const cinzel = Cinzel({
+  variable: "--font-cinzel",
   subsets: ["latin"],
+  weight: ["600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const crimson = Crimson_Pro({
+  variable: "--font-crimson",
   subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -31,12 +36,15 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${cinzel.variable} ${crimson.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <body className="flex min-h-full flex-col">
         <Providers>
           <SiteHeader />
-          <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</div>
+          {/* Madera = fondo; todo el contenido de cada vista va en una hoja de pergamino. */}
+          <div className="mx-auto w-full max-w-5xl flex-1 px-3 pb-10 pt-5 sm:px-4">
+            <div className="sheet px-4 py-6 sm:px-8 sm:py-8">{children}</div>
+          </div>
         </Providers>
       </body>
     </html>

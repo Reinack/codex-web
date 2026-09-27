@@ -63,25 +63,25 @@ export function GlobalSearch() {
         onChange={(e) => setQ(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
         placeholder={t("header.searchPlaceholder")}
-        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900"
+        className="field w-full py-1.5"
       />
       {open && (loading || results.length > 0 || q.trim().length >= 2) && (
-        <ul className="absolute z-30 mt-1 max-h-80 w-full overflow-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-          {loading && <li className="px-3 py-2 text-xs text-zinc-500">buscando…</li>}
+        <ul className="absolute z-30 mt-1 max-h-80 w-full overflow-auto border border-[rgba(58,28,14,0.6)] bg-[#e2cfa6] bg-[image:var(--papyrus)] py-1 text-[var(--papyrus-text)] shadow-[0_0_0_1px_#0b0603,0_10px_24px_rgba(0,0,0,0.5)]">
+          {loading && <li className="px-3 py-2 text-xs italic text-[rgba(58,28,14,0.7)]">buscando…</li>}
           {!loading &&
             results.map((r) => (
               <li key={r.path}>
                 <button
                   onClick={() => go(r)}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-amber-500/10"
+                  className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-[15px] font-semibold hover:bg-[rgba(58,28,14,0.14)] hover:text-[var(--red-500)]"
                 >
                   <span className="truncate">{r.title}</span>
-                  {r.type && <span className="shrink-0 text-xs text-zinc-500">{r.type}</span>}
+                  {r.type && <span className="shrink-0 text-xs italic text-[rgba(58,28,14,0.7)]">{r.type}</span>}
                 </button>
               </li>
             ))}
           {!loading && results.length === 0 && (
-            <li className="px-3 py-2 text-xs text-zinc-500">sin resultados</li>
+            <li className="px-3 py-2 text-xs italic text-[rgba(58,28,14,0.7)]">sin resultados</li>
           )}
         </ul>
       )}

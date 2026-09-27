@@ -19,20 +19,21 @@ function ensureFcose() {
   }
 }
 
-// Paleta por tipo de nodo (consistente con el resto de la app).
+// Paleta por tipo de nodo: pigmentos de la guía de estilo del árbol (unidades
+// lapislázuli, tecnologías verdín, edificios almagre…).
 const TYPE_COLOR: Record<string, string> = {
-  civ: "#f59e0b",
-  unit: "#38bdf8",
-  strateg: "#a78bfa",
-  tech: "#34d399",
-  building: "#fb923c",
-  map: "#f472b6",
-  player: "#f87171",
+  civ: "#8a1812",
+  unit: "#2a5d86",
+  strateg: "#5d2a63",
+  tech: "#2e6a45",
+  building: "#7b3a22",
+  map: "#53682a",
+  player: "#792243",
 };
 function colorForType(type?: string | null): string {
   const t = (type || "").toLowerCase();
   for (const key of Object.keys(TYPE_COLOR)) if (t.includes(key)) return TYPE_COLOR[key];
-  return "#94a3b8";
+  return "#6f5234";
 }
 const TYPE_LABEL_ES: Record<string, string> = {
   meta: "Meta",
@@ -92,12 +93,10 @@ export function GraphExplorer({
     if (!container) return;
     ensureFcose();
 
-    const dark =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-    const ink = dark ? "#e4e4e7" : "#18181b";
-    const textBg = dark ? "#09090b" : "#ffffff";
-    const edgeColor = dark ? "#3f3f46" : "#d4d4d8";
+    // El grafo se dibuja sobre el pergamino: tinta y papel de la guía de estilo.
+    const ink = "#22150b";
+    const textBg = "#ecdcb6";
+    const edgeColor = "#4b331c";
 
     // Grado de cada nodo → tamaño (centralidad visual, estándar en exploradores).
     const degree = new Map<string, number>();
@@ -131,7 +130,8 @@ export function GraphExplorer({
             "background-color": "data(color)",
             label: "data(label)",
             "font-size": 10,
-            "font-weight": 500,
+            "font-weight": 600,
+            "font-family": "Crimson Pro, Georgia, serif",
             color: ink,
             "text-valign": "bottom",
             "text-halign": "center",
@@ -141,7 +141,7 @@ export function GraphExplorer({
             "text-background-color": textBg,
             "text-background-opacity": 0.75,
             "text-background-padding": "3px",
-            "text-background-shape": "roundrectangle",
+            "text-background-shape": "rectangle",
             "border-width": 2,
             "border-color": textBg,
             width: `mapData(degree, 0, ${maxDeg}, 26, 60)`,
@@ -154,7 +154,7 @@ export function GraphExplorer({
           selector: "node[center = 1]",
           style: {
             "border-width": 4,
-            "border-color": "#f59e0b",
+            "border-color": "#c69b45",
             "font-size": 13,
             "font-weight": 700,
             width: 64,
@@ -173,12 +173,12 @@ export function GraphExplorer({
             "arrow-scale": 0.8,
             label: "",
             "font-size": 8,
-            color: dark ? "#a1a1aa" : "#71717a",
+            color: "#6f5234",
             "text-rotation": "autorotate",
             "text-background-color": textBg,
             "text-background-opacity": 0.85,
             "text-background-padding": "2px",
-            opacity: 0.55,
+            opacity: 0.45,
             "transition-property": "opacity, line-color, width",
             "transition-duration": 150,
           },
@@ -187,13 +187,13 @@ export function GraphExplorer({
         { selector: ".faded", style: { opacity: 0.12, "text-opacity": 0.12 } },
         {
           selector: "node.highlight",
-          style: { "border-color": "#0ea5e9", "border-width": 3, "z-index": 20 },
+          style: { "border-color": "#8a1812", "border-width": 3, "z-index": 20 },
         },
         {
           selector: "edge.highlight",
-          style: { "line-color": "#0ea5e9", "target-arrow-color": "#0ea5e9", width: 2.5, opacity: 1, label: "data(label)" },
+          style: { "line-color": "#8a1812", "target-arrow-color": "#8a1812", width: 2.5, opacity: 1, label: "data(label)" },
         },
-        { selector: "node:selected", style: { "border-color": "#0ea5e9", "border-width": 4 } },
+        { selector: "node:selected", style: { "border-color": "#c69b45", "border-width": 4 } },
       ],
       layout: {
         name: "fcose",

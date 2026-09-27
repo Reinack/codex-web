@@ -105,7 +105,7 @@ export default function ProductionPage() {
             <select
               value={civ}
               onChange={(e) => setCiv(e.target.value)}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900"
+              className="field field-select"
             >
               <option value="">Genérica / Generic</option>
               {catalog.civs.map((c) => (
@@ -119,14 +119,14 @@ export default function ProductionPage() {
           <select
             value={age}
             onChange={(e) => setAge(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900"
+            className="field field-select"
           >
             {AGES.map((a) => <option key={a} value={a}>{AGE_LABEL[a]}</option>)}
           </select>
         </label>
         <button
           onClick={() => setItems({})}
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm transition-colors hover:border-amber-400 dark:border-zinc-700"
+          className="field font-medium transition-colors hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400"
         >
           {t("production.reset")}
         </button>
@@ -136,7 +136,7 @@ export default function ProductionPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* DEMANDA */}
-        <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="surface flex flex-col gap-3 p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
             {t("production.demand")}
           </h2>
@@ -165,7 +165,7 @@ export default function ProductionPage() {
         </section>
 
         {/* RESULTADOS */}
-        <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="surface flex flex-col gap-3 p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
             {t("production.result")}
           </h2>
@@ -251,14 +251,16 @@ function ItemPicker({
                   key={it.id}
                   onClick={() => onAdd(it.id)}
                   title={it.name}
-                  className={`relative flex w-[62px] flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-colors ${ring} ${
-                    n ? "border-amber-400 bg-amber-500/15 ring-1 ring-amber-400"
-                      : "border-zinc-200 hover:border-amber-400 hover:bg-amber-500/5 dark:border-zinc-700"
+                  className={`group relative flex w-16 flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${ring} ${
+                    n ? "border-amber-400 bg-amber-500/15 shadow-[0_0_0_3px_var(--ring)]"
+                      : "border-zinc-200 hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-500/5 dark:border-zinc-700"
                   }`}
                 >
-                  <ItemIcon item={it} className="h-7 w-7" />
+                  <span className="flex h-9 w-9 items-center justify-center rounded-md bg-zinc-950/90 ring-1 ring-black/10 dark:bg-black/60">
+                    <ItemIcon item={it} className="h-7 w-7" />
+                  </span>
                   {n > 0 && (
-                    <span className="absolute -right-1.5 -top-1.5 min-w-4 rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">{n}</span>
+                    <span className="absolute -right-1.5 -top-1.5 min-w-4 rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white shadow-sm">{n}</span>
                   )}
                   <span className="w-full truncate text-[10px] text-zinc-600 dark:text-zinc-400">{it.name}</span>
                 </button>
@@ -381,12 +383,13 @@ function SupplyPanel({
   const delContrib = (i: number) =>
     setSupply((s) => ({ ...s, contributors: s.contributors.filter((_, j) => j !== i) }));
 
-  const inputCls = "rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-amber-400 dark:border-zinc-700 dark:bg-zinc-950";
+  const inputCls = "field";
+  const selectCls = "field field-select";
 
   return (
-    <details className="rounded-xl border border-zinc-200 bg-white px-4 open:pb-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <summary className="cursor-pointer py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-        ⚙️ {t("production.economy")} — <span className="font-normal normal-case">{t("production.standardEco")}</span>
+    <details className="surface px-4 open:pb-4">
+      <summary className="cursor-pointer select-none py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 marker:content-none">
+        <span className="text-amber-600 dark:text-amber-400">⚙</span> {t("production.economy")} — <span className="font-normal normal-case">{t("production.standardEco")}</span>
       </summary>
 
       <div className="mb-2 text-[11px] uppercase tracking-wide text-zinc-400">Fuente de relleno por recurso</div>
@@ -397,7 +400,7 @@ function SupplyPanel({
           return (
             <label key={res} className="flex flex-col gap-1 text-xs text-zinc-500">
               <span className="flex items-center gap-1"><ResIcon res={res} /> {t(`production.res.${res}`)}</span>
-              <select value={supply.bySource[res] || ""} onChange={(e) => setSource(res, e.target.value)} className={inputCls}>
+              <select value={supply.bySource[res] || ""} onChange={(e) => setSource(res, e.target.value)} className={selectCls}>
                 <option value="">{t("production.source.standard")}</option>
                 {opts.map(([id, s]) => <option key={id} value={id}>{s.label}</option>)}
               </select>
@@ -412,7 +415,7 @@ function SupplyPanel({
         <div className="flex flex-col gap-2">
           {supply.contributors.map((c, i) => (
             <div key={i} className="flex items-center gap-2">
-              <select value={c.source} onChange={(e) => setContrib(i, { source: e.target.value })} className={`${inputCls} flex-1`}>
+              <select value={c.source} onChange={(e) => setContrib(i, { source: e.target.value })} className={`${selectCls} flex-1`}>
                 {Object.entries(catalog.sources).map(([id, s]) => <option key={id} value={id}>{s.label}</option>)}
               </select>
               <input

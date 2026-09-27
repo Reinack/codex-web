@@ -130,7 +130,7 @@ export default function CountersPage() {
               e.target.value = "";
             }}
             disabled={civSlugs.length >= MAX_CIVS}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900"
+            className="field field-select disabled:opacity-50"
           >
             <option value="">{t("counters.addCiv")}</option>
             {civList
@@ -146,11 +146,11 @@ export default function CountersPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={t("counters.searchPlaceholder")}
-              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-zinc-700 dark:bg-zinc-900"
+              className="field flex-1"
             />
             <button
               type="submit"
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600"
+              className="aoe-btn"
             >
               {t("common.search")}
             </button>

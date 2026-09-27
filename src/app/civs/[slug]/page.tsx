@@ -106,7 +106,7 @@ export default async function CivDetailPage({ params }: Params) {
               <RadarChart
                 axes={PHASE_AXES}
                 max={RADAR_MAX}
-                series={[{ name: civ.title, values: radar.phase, color: "#f59e0b" }]}
+                series={[{ name: civ.title, values: radar.phase, color: "#8a1812" }]}
               />
             </div>
             <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -116,7 +116,7 @@ export default async function CivDetailPage({ params }: Params) {
               <RadarChart
                 axes={CATEGORY_AXES}
                 max={RADAR_MAX}
-                series={[{ name: civ.title, values: radar.category, color: "#f59e0b" }]}
+                series={[{ name: civ.title, values: radar.category, color: "#8a1812" }]}
               />
             </div>
           </div>
