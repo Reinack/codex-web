@@ -22,8 +22,8 @@ import { buildRadarPlan } from "@/lib/radar/plan";
 import { buildCivSignatureCombo, type CivCombo, type CivComboLine } from "@/lib/matchup/combo";
 import { useT } from "@/lib/i18n/I18nProvider";
 
-const ME_COLOR = "#f59e0b";
-const VS_COLOR = "#0ea5e9";
+const ME_COLOR = "#8a1812";
+const VS_COLOR = "#2a5d86";
 
 function MatchupRadars({
   me,
@@ -179,7 +179,7 @@ export default function MatchupsPage() {
         <button
           type="submit"
           disabled={!me || !vs || me === vs}
-          className="rounded-lg bg-gradient-to-b from-amber-400 to-amber-500 px-5 py-2 text-sm font-semibold text-amber-950 shadow-sm transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow disabled:cursor-not-allowed disabled:opacity-40"
+          className="aoe-btn"
         >
           {t("common.analyze")}
         </button>
@@ -566,7 +566,7 @@ function CivSelect({
   // El campo "vs" reusa el mismo utility `field`, pero con las variables de
   // acento (borde/anillo de foco) recoloreadas a celeste vía CSS var scoping
   // — evita pelear con la especificidad de Tailwind por un color puntual.
-  const vsVars = { "--accent-soft": "#38bdf8", "--ring": "rgba(56,189,248,0.25)" } as CSSProperties;
+  const vsVars = { "--accent-soft": "#2a5d86", "--ring": "rgba(42,93,134,0.25)" } as CSSProperties;
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-medium text-zinc-500">{label}</label>

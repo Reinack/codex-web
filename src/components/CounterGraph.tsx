@@ -7,15 +7,17 @@ import type { CounterGraph as CounterGraphData, CyNodeData } from "@/lib/api/sch
 // 'hard/soft/situational' = lo que te counterea (entra al centro);
 // 'beats-*' = a lo que tu unidad le gana (sale del centro); 'center' = la buscada.
 const NODE_COLOR: Record<string, string> = {
-  center: "#f59e0b",
-  hard: "#e11d48",
-  soft: "#fb923c",
-  situational: "#a1a1aa",
-  "beats-hard": "#059669",
-  "beats-soft": "#2dd4bf",
-  "beats-situational": "#38bdf8",
+// Pigmentos de la guía de estilo del árbol: rojo --bad = te counterea, verde
+// --good = le ganás, oro = la unidad buscada (selección/jerarquía).
+  center: "#c69b45",
+  hard: "#9b2b1a",
+  soft: "#83551d",
+  situational: "#6f5234",
+  "beats-hard": "#3d6b17",
+  "beats-soft": "#53682a",
+  "beats-situational": "#2a5d86",
 };
-const colorFor = (type?: string) => (type && NODE_COLOR[type]) || "#a1a1aa";
+const colorFor = (type?: string) => (type && NODE_COLOR[type]) || "#6f5234";
 const baseType = (t?: string) => (t || "").replace("beats-", "");
 const R_BY_STRENGTH: Record<string, number> = { hard: 170, soft: 270, situational: 360 };
 const ORDER: Record<string, number> = { hard: 0, soft: 1, situational: 2 };
@@ -82,16 +84,17 @@ export function CounterGraph({
             height: 54,
             label: "data(label)",
             "font-size": 10,
-            color: "#f8fafc",
+            color: "#e4d4b0",
             "text-valign": "bottom",
             "text-halign": "center",
             "text-margin-y": 5,
             "text-wrap": "wrap",
             "text-max-width": "96px",
-            "text-background-color": "#0f172a",
+            "text-background-color": "#060402",
             "text-background-opacity": 0.82,
             "text-background-padding": "3px",
-            "text-background-shape": "roundrectangle",
+            "text-background-shape": "rectangle",
+            "font-family": "Crimson Pro, Georgia, serif",
           },
         },
         {
@@ -104,12 +107,12 @@ export function CounterGraph({
             width: 2,
             "curve-style": "bezier",
             "target-arrow-shape": "triangle",
-            "line-color": "#94a3b8",
-            "target-arrow-color": "#94a3b8",
-            opacity: 0.5,
+            "line-color": "#4b331c",
+            "target-arrow-color": "#4b331c",
+            opacity: 0.55,
           },
         },
-        { selector: "node:selected", style: { "border-color": "#0ea5e9", "border-width": 5 } },
+        { selector: "node:selected", style: { "border-color": "#ecd08a", "border-width": 5 } },
       ],
       layout: { name: "preset", fit: true, padding: 36 },
       minZoom: 0.25,

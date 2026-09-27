@@ -20,12 +20,18 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { t, locale, setLocale } = useI18n();
   return (
-    <header className="sticky top-0 z-20 border-b border-amber-900/10 bg-zinc-50/80 backdrop-blur dark:border-amber-200/10 dark:bg-zinc-950/80">
+    <header className="on-dark sticky top-0 z-20 border-b border-[var(--gold-line)] bg-[#24140b] bg-[image:var(--wood)] bg-fixed shadow-[0_1px_0_0_#0b0603,0_6px_18px_rgba(0,0,0,0.45)]">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-        <Link href="/" className="font-mono text-sm font-semibold tracking-tight">
-          aoe2 · <span className="text-amber-600 dark:text-amber-400">codex</span>
+        <Link href="/" className="flex items-center gap-2 font-display text-[15px] font-bold tracking-[0.06em] text-[var(--on-dark)]">
+          <svg viewBox="0 0 24 24" className="h-5 w-5 text-[var(--gold)]" fill="none" aria-hidden>
+            <path d="M6.5 7 12 17M17.5 7 12 17M7.2 6h9.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="6.5" cy="7" r="2.2" fill="currentColor" opacity="0.6" />
+            <circle cx="17.5" cy="7" r="2.2" fill="currentColor" opacity="0.6" />
+            <circle cx="12" cy="17" r="2.6" fill="currentColor" />
+          </svg>
+          AoE2 · <span className="text-[var(--gold-text)]">Codex</span>
         </Link>
-        <nav className="order-3 flex flex-wrap gap-1 text-sm sm:order-2">
+        <nav className="order-3 flex flex-wrap gap-0.5 font-display text-[13px] font-semibold tracking-[0.04em] sm:order-2">
           {NAV.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(item.href + "/");
@@ -34,12 +40,15 @@ export function SiteHeader() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-md px-2.5 py-1.5 transition-colors ${
+                className={`relative px-2.5 py-1.5 transition-colors ${
                   active
-                    ? "bg-amber-500/15 font-medium text-amber-700 dark:text-amber-300"
-                    : "text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+                    ? "text-[var(--gold-text)]"
+                    : "text-[var(--on-dark-dim)] hover:bg-[rgba(138,24,18,0.35)] hover:text-[var(--on-dark)]"
                 }`}
               >
+                {active && (
+                  <span className="absolute inset-x-2 bottom-0 h-px bg-[var(--gold)]" />
+                )}
                 {t(item.key)}
               </Link>
             );
@@ -47,7 +56,7 @@ export function SiteHeader() {
         </nav>
         <div className="order-2 ml-auto flex items-center gap-2 sm:order-3">
           <GlobalSearch />
-          <div className="flex overflow-hidden rounded-md border border-zinc-300 text-[11px] font-medium dark:border-zinc-700">
+          <div className="flex shrink-0 overflow-hidden border border-[var(--hair)] font-display text-[11px] font-bold">
             {LOCALES.map((l) => (
               <button
                 key={l}
@@ -55,8 +64,8 @@ export function SiteHeader() {
                 aria-pressed={locale === l}
                 className={`px-1.5 py-1 uppercase transition-colors ${
                   locale === l
-                    ? "bg-amber-500/20 text-amber-700 dark:text-amber-300"
-                    : "text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800"
+                    ? "text-[var(--gold-text)] shadow-[inset_0_0_0_1px_var(--gold)]"
+                    : "text-[var(--on-dark-dim)] hover:bg-[rgba(138,24,18,0.35)] hover:text-[var(--on-dark)]"
                 }`}
               >
                 {l}

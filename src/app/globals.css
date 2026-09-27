@@ -1,91 +1,346 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   AoE2 Codex — estética del árbol tecnológico (Aoe2-Tech-Tree-Advanced,
+   docs/GUIA-DE-ESTILO.md): "un objeto histórico digitalizado".
+   · Madera oscura = fondo (body, cabecera).
+   · Pergamino = contenido (la hoja principal y sus fichas).
+   · Papiro = controles de formulario.  Negro de diálogo = tooltips/overlays.
+   · Rojo profundo = acciones y hover.  Oro = jerarquía y selección, sólo en
+     hilos y letras.  Cinzel para títulos, Crimson Pro para texto.
+   · Esquinas rectas siempre (única excepción: sellos circulares).
+   Los tokens de :root son copia de public/style.css del árbol: si cambian allá,
+   se actualizan acá.
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* Sin modo oscuro automático: la madera ya es el "oscuro" y el contenido va
+   siempre en pergamino. Las clases dark:* quedan inertes (no hay .dark). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  /* Acento ámbar (vibe AoE2/pergamino) reutilizable. */
-  --accent: #d97706;
-  --accent-soft: #f59e0b;
+  /* Tierra oscura (fondo de opciones nativas y rellenos oscuros) */
+  --earth-800: #21170f;
+
+  /* Pergamino y tinta */
+  --parch-50:  #f5ead0;
+  --parch-100: #ecdcb6;
+  --ink-900: #22150b;
+  --ink-700: #4b331c;
+  --ink-500: #6f5234;
+  --rule: rgba(75, 51, 28, 0.42);        /* filete de tinta sobre pergamino */
+  --rule-soft: rgba(75, 51, 28, 0.2);
+  --on-dark: #e4d4b0;                    /* texto sobre fondo oscuro */
+  --on-dark-dim: #c2ab84;
+  --hair: rgba(228, 212, 176, 0.16);     /* filete claro sobre fondo oscuro */
+
+  /* Rojo profundo: acciones */
+  --red-600: #6e100c;
+  --red-500: #8a1812;
+  --red-400: #a8261b;
+
+  /* Oro: jerarquía y selección */
+  --gold: #c69b45;
+  --gold-hi: #ecd08a;
+  --gold-text: #eed59a;
+  --gold-line: rgba(198, 155, 69, 0.75);
+  --btn-text: #f1e2c4;
+
+  --good: #3d6b17;
+  --bad: #9b2b1a;
+
+  --font-display: var(--font-cinzel), 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --font-body: var(--font-crimson), 'Crimson Pro', Georgia, 'Times New Roman', serif;
+
+  /* Texturas (ruido SVG): nada de superficies perfectamente limpias.
+     Nunca grano/ruido sobre superficies oscuras: dificulta la lectura. */
+  --paper: url('/aoe/paper.jpg');
+  /* Veta de la madera: rayas verticales largas (oscuras y claras) */
+  --wood-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='720'%3E%3Cfilter id='d' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.07 .004' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .05 0 0 0 0 .02 -1.8 0 0 0 1.12'/%3E%3C/filter%3E%3Cfilter id='l' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.11 .006' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .33 0 0 0 0 .2 1.4 0 0 0 -.72'/%3E%3C/filter%3E%3Crect width='360' height='720' filter='url(%23d)'/%3E%3Crect width='360' height='720' filter='url(%23l)'/%3E%3C/svg%3E");
+  /* Manchas suaves del pergamino */
+  --stain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.011' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .28 0 0 0 0 .1 -1.3 0 0 0 .66'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23f)'/%3E%3C/svg%3E");
+  /* Tablones de madera oscura: viñeta, juntas, tono por tablón, veta y base */
+  --wood:
+    radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(8, 4, 2, 0.55) 100%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0 2px, rgba(255, 214, 170, 0.07) 2px 3px, transparent 3px 126px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.1) 0 126px, rgba(255, 205, 160, 0.035) 126px 252px, rgba(0, 0, 0, 0.04) 252px 378px),
+    var(--wood-grain),
+    linear-gradient(180deg, #452719, #36200f 60%, #2b170d);
+  /* Papiro de los controles (desplegables), como los del juego */
+  --papyrus: linear-gradient(180deg, rgba(240, 222, 184, 0.55), rgba(214, 184, 136, 0.55)), var(--paper);
+  --papyrus-text: #3a1c0e;
+  /* Barra de desplazamiento: botones de acero con flecha y ornamento en el pulgar */
+  --sb-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%235a524a'/%3E%3Cstop offset='1' stop-color='%232a231d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='.5' y='.5' width='15' height='15' fill='url(%23g)' stroke='%23050302'/%3E%3Crect x='1.5' y='1.5' width='13' height='13' fill='none' stroke='%23fffaf0' stroke-opacity='.16'/%3E%3Cpath d='M8 4.2L12.3 11H3.7Z' fill='%23d6cfc4' stroke='%231a130e' stroke-width='.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --sb-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%235a524a'/%3E%3Cstop offset='1' stop-color='%232a231d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='.5' y='.5' width='15' height='15' fill='url(%23g)' stroke='%23050302'/%3E%3Crect x='1.5' y='1.5' width='13' height='13' fill='none' stroke='%23fffaf0' stroke-opacity='.16'/%3E%3Cpath d='M8 11.8L12.3 5H3.7Z' fill='%23d6cfc4' stroke='%231a130e' stroke-width='.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --sb-knob: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' width='14' height='14'%3E%3Cpath d='M7 .8L9.1 4.9L13.2 7L9.1 9.1L7 13.2L4.9 9.1L.8 7L4.9 4.9Z' fill='%23cfc8bd' stroke='%231a130e' stroke-width='.8'/%3E%3Ccircle cx='7' cy='7' r='1.7' fill='%236b625a' stroke='%231a130e' stroke-width='.6'/%3E%3C/svg%3E");
+  /* Marco negro de los diálogos (como "Elegir civilización") */
+  --dialog-black: rgba(6, 4, 2, 0.94);
+  /* Filete engrosado de imprenta con rombo central */
+  --ornament: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='12' viewBox='0 0 180 12'%3E%3Cg fill='%234b331c'%3E%3Cpath d='M4 6Q46 4.5 76 6Q46 7.5 4 6Z'/%3E%3Cpath d='M176 6Q134 4.5 104 6Q134 7.5 176 6Z'/%3E%3Cpath d='M90 1.2L94.8 6L90 10.8L85.2 6Z'/%3E%3Ccircle cx='80' cy='6' r='1.4'/%3E%3Ccircle cx='100' cy='6' r='1.4'/%3E%3C/g%3E%3Cpath d='M90 3.6L92.4 6L90 8.4L87.6 6Z' fill='%23ecdcb6'/%3E%3C/svg%3E");
+
+  --parchment:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 246, 222, 0.38), transparent 72%),
+    var(--stain),
+    linear-gradient(rgba(236, 220, 182, 0.35), rgba(236, 220, 182, 0.35)),
+    var(--paper);
+  --burnt-edge: inset 0 0 0 1px rgba(60, 36, 14, 0.35), inset 0 0 24px rgba(112, 70, 28, 0.42), inset 0 0 4px rgba(80, 46, 16, 0.4);
+
+  /* Colores de nodo: pigmentos (lapislázuli, verdín, almagre…) */
+  --unit-c: #2a5d86;  --unit-r: #43437a;  --unit-u: #5d2a63;
+  --tech-c: #2e6a45;  --tech-r: #53682a;  --tech-u: #83551d;
+  --bld-c:  #7b3a22;  --bld-r:  #8a2a1b;  --bld-u:  #792243;
+}
+
+/* ── Paleta de Tailwind remapeada a tintas y pigmentos ─────────────────────
+   Así todas las vistas (que usan zinc/amber/…) heredan la guía sin reescribir
+   cada clase: zinc = tintas sobre pergamino, amber = rojo de acción,
+   white = pergamino claro, emerald/rose = --good/--bad, sky/violet/orange =
+   pigmentos de los nodos del árbol. */
+@theme {
+  --font-sans: var(--font-crimson), "Crimson Pro", Georgia, serif;
+  --font-serif: var(--font-crimson), "Crimson Pro", Georgia, serif;
+  --font-display: var(--font-cinzel), "Cinzel", Georgia, serif;
+  --font-mono: var(--font-crimson), "Crimson Pro", Georgia, serif;
+
+  --radius-xs: 0; --radius-sm: 0; --radius-md: 0; --radius-lg: 0;
+  --radius-xl: 0; --radius-2xl: 0; --radius-3xl: 0; --radius-4xl: 0;
+
+  --color-white: #f6ecd4;
+  --color-black: #0b0603;
+
+  --color-zinc-50:  #f5ead0;
+  --color-zinc-100: #ecdcb6;
+  --color-zinc-200: #cdb68c;
+  --color-zinc-300: #b89c6e;
+  --color-zinc-400: #7d6245;
+  --color-zinc-500: #6f5234;
+  --color-zinc-600: #5a4029;
+  --color-zinc-700: #4b331c;
+  --color-zinc-800: #362410;
+  --color-zinc-900: #22150b;
+  --color-zinc-950: #170e07;
+
+  --color-amber-50:  #f3dccb;
+  --color-amber-100: #ecc9b2;
+  --color-amber-200: #dca58a;
+  --color-amber-300: #c7765c;
+  --color-amber-400: #a8261b;
+  --color-amber-500: #8a1812;
+  --color-amber-600: #7a140f;
+  --color-amber-700: #6e100c;
+  --color-amber-800: #560b08;
+  --color-amber-900: #3f0806;
+  --color-amber-950: #2a0403;
+
+  --color-orange-400: #9c6a2c;
+  --color-orange-500: #83551d;
+  --color-orange-600: #6d4515;
+
+  --color-emerald-300: #7f9f5c;
+  --color-emerald-400: #5a8330;
+  --color-emerald-500: #3d6b17;
+  --color-emerald-600: #3d6b17;
+  --color-emerald-700: #2f5410;
+
+  --color-rose-50:  #f1d9cc;
+  --color-rose-200: #d9a08e;
+  --color-rose-300: #c46a55;
+  --color-rose-400: #b0412f;
+  --color-rose-500: #9b2b1a;
+  --color-rose-600: #9b2b1a;
+  --color-rose-700: #7c2013;
+  --color-rose-900: #4a130b;
+  --color-rose-950: #2e0b06;
+
+  --color-sky-400: #3d77a3;
+  --color-sky-500: #2a5d86;
+  --color-sky-600: #2a5d86;
+
+  --color-violet-300: #8a5a90;
+  --color-violet-400: #74407a;
+  --color-violet-500: #5d2a63;
+  --color-violet-700: #4a2050;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--parch-50);
+  --color-foreground: var(--ink-900);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0b;
-    --foreground: #ededed;
-    --accent: #f59e0b;
-    --accent-soft: #fbbf24;
-  }
+/* Acento de foco de los controles. Una vista puede redefinirlo en un
+   contenedor (p.ej. el lado "rival" del Matchup Lab usa lapislázuli). */
+:root {
+  --accent-soft: var(--red-500);
+  --ring: rgba(138, 24, 18, 0.25);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  /* Doble halo ámbar + tinte frío inferior: da profundidad de "sala de mando"
-     sin estorbar la lectura. */
-  background-image:
-    radial-gradient(
-      55rem 28rem at 50% -8rem,
-      color-mix(in oklab, var(--accent-soft) 14%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      40rem 22rem at 100% 0,
-      color-mix(in oklab, #0ea5e9 7%, transparent),
-      transparent 70%
-    );
-  background-repeat: no-repeat;
+  font-family: var(--font-body);
+  color: var(--on-dark);
+  background: var(--wood);
   background-attachment: fixed;
+  background-color: #2b170d;
 }
 
-/* Tipografía: títulos un poco más apretados, números tabulares para stats. */
-h1,
-h2,
-h3 {
-  letter-spacing: -0.015em;
+/* Títulos en capitales romanas. Los números no van en Cinzel (su "11" se lee
+   "II"): los contadores usan tabular-nums sobre Crimson Pro. */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-/* Selección con el acento de la marca. */
-::selection {
-  background: color-mix(in oklab, var(--accent-soft) 35%, transparent);
+::selection { background: rgba(138, 24, 18, 0.28); }
+
+/* Foco de teclado: rojo sobre pergamino, crema sobre oscuro. */
+:focus-visible { outline: 2px solid var(--red-500); outline-offset: 2px; }
+.on-dark :focus-visible { outline-color: var(--parch-100); }
+
+/* ── Barra de desplazamiento estilo AoE2 (copiada del árbol) ──────────────
+   No usar scrollbar-width/scrollbar-color: Chrome ignora ::-webkit-scrollbar. */
+::-webkit-scrollbar { width: 16px; height: 16px; }
+::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #120c08, #2a211a 45%, #1c140e);
+  box-shadow: inset 1px 0 0 #050302;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sb-knob) center / 14px 14px no-repeat, linear-gradient(90deg, #3b332c, #6f665d 50%, #3b332c);
+  border: 1px solid #050302;
+  box-shadow: inset 0 0 0 1px rgba(255, 250, 240, 0.12);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sb-knob) center / 14px 14px no-repeat, linear-gradient(90deg, #4a4139, #867c72 50%, #4a4139);
+}
+::-webkit-scrollbar-button:single-button {
+  display: block;
+  width: 16px; height: 16px;
+  background: #1c140e var(--sb-up) center / 16px 16px no-repeat;
+}
+::-webkit-scrollbar-button:single-button:vertical:increment { background-image: var(--sb-down); }
+::-webkit-scrollbar-button:vertical:start:increment,
+::-webkit-scrollbar-button:vertical:end:decrement,
+::-webkit-scrollbar-button:horizontal { display: none; }
+::-webkit-scrollbar-track:horizontal { background: linear-gradient(180deg, #120c08, #2a211a 45%, #1c140e); box-shadow: inset 0 1px 0 #050302; }
+::-webkit-scrollbar-thumb:horizontal { background: var(--sb-knob) center / 14px 14px no-repeat, linear-gradient(180deg, #3b332c, #6f665d 50%, #3b332c); }
+::-webkit-scrollbar-corner { background: #120c08; }
+/* Firefox no permite botones ni imágenes: al menos los mismos colores */
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-color: #6f665d #1c140e; }
 }
 
-/* Scrollbar discreta y temática (Firefox + WebKit). */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklab, var(--accent-soft) 40%, transparent) transparent;
-}
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-*::-webkit-scrollbar-thumb {
-  background: color-mix(in oklab, var(--accent-soft) 35%, transparent);
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-*::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in oklab, var(--accent-soft) 55%, transparent);
-  background-clip: padding-box;
+/* ── Superficies ─────────────────────────────────────────────────────────── */
+
+/* Hoja de pergamino principal: todo el contenido de cada vista vive acá. */
+@utility sheet {
+  position: relative;
+  color: var(--ink-900);
+  background: var(--parchment);
+  border: 1px solid var(--gold-line);
+  box-shadow: 0 0 0 1px #0b0603, var(--burnt-edge), 0 18px 40px rgba(0, 0, 0, 0.55);
 }
 
-/* Utilidad de panel con borde+blur reutilizable en las vistas. */
+/* Ficha dentro del pergamino: papel apenas más claro y filete de tinta.
+   Hover = acción → filete rojo y marca roja a la izquierda (sin elevar). */
+@utility surface {
+  border-radius: 0;
+  border: 1px solid var(--rule);
+  background: rgba(255, 248, 228, 0.32);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+@utility surface-hover {
+  &:hover {
+    border-color: var(--red-500);
+    box-shadow: inset 3px 0 0 var(--red-500);
+    background: rgba(255, 248, 228, 0.5);
+  }
+}
 @utility panel {
-  border-radius: 0.875rem;
-  border-width: 1px;
-  border-color: color-mix(in oklab, var(--foreground) 12%, transparent);
-  background: color-mix(in oklab, var(--background) 80%, white 6%);
-  backdrop-filter: blur(4px);
+  border-radius: 0;
+  border: 1px solid var(--rule);
+  background: rgba(255, 248, 228, 0.32);
+}
+
+/* Diálogo negro (tooltips, overlays sobre el grafo): liso, sin textura. */
+@utility dialog {
+  color: var(--on-dark);
+  background: var(--dialog-black);
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 0 1px #000, 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* Controles de formulario: papiro con filete de tinta. */
+@utility field {
+  border-radius: 0;
+  border: 1px solid rgba(58, 28, 14, 0.55);
+  background: var(--papyrus);
+  color: var(--papyrus-text);
+  font-family: var(--font-body);
+  font-weight: 600;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.95rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 246, 222, 0.35), 0 1px 0 rgba(0, 0, 0, 0.15);
+  outline: none;
+  &::placeholder { color: rgba(58, 28, 14, 0.6); font-weight: 400; font-style: italic; }
+  &:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 1px; }
+}
+/* Flecha del desplegable: el botón de acero de la barra de desplazamiento. */
+@utility field-select {
+  appearance: none;
+  padding-right: 2.2rem;
+  background: var(--sb-down) right 0.35rem center / 18px 18px no-repeat, var(--papyrus);
+}
+
+/* Botón de acción (menú principal del juego): rojo profundo, filete dorado,
+   letra Cinzel crema. */
+@utility aoe-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem 0.55rem;
+  border-radius: 0;
+  background: linear-gradient(180deg, #8c1a13 0%, #6a0e0a 48%, #4c0706 100%);
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 0 1px #0b0503, inset 0 0 0 1px rgba(20, 2, 1, 0.6), inset 0 0 14px rgba(20, 0, 0, 0.55), 0 3px 8px rgba(0, 0, 0, 0.35);
+  color: var(--btn-text);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 0 #1c0302, 0 0 4px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  transition: filter 0.12s, background 0.12s;
+  &:hover { background: linear-gradient(180deg, #a3241a 0%, #7b140e 48%, #5a0a08 100%); }
+  &:active { filter: brightness(0.85); }
+  &:disabled { opacity: 0.55; cursor: default; }
+}
+
+/* Título de sección entre filetes que se desvanecen (ornamento de imprenta). */
+@utility section-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-700);
+  &::before, &::after { content: ""; flex: 1; height: 1px; }
+  &::before { background: linear-gradient(90deg, transparent, var(--rule)); }
+  &::after { background: linear-gradient(90deg, var(--rule), transparent); }
+}
+
+/* Filete engrosado con rombo central (bajo títulos principales). */
+@utility ornament {
+  height: 12px;
+  background: var(--ornament) center / 180px 12px no-repeat;
+}
+
+/* Esquinas rectas también en las píldoras/puntos (rounded-full). Sólo las
+   imágenes redondas y los marcos que las contienen se conservan: funcionan
+   como sellos (escudos de civ). */
+@layer utilities {
+  .rounded-full:not(img):not(:has(> img)):not(.animate-spin) { border-radius: 0; }
 }

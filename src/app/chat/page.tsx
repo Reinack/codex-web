@@ -68,7 +68,7 @@ export default function ChatPage() {
               <button
                 key={ex}
                 onClick={() => ask(ex)}
-                className="rounded-full border border-zinc-300 px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:border-amber-400 dark:border-zinc-700 dark:text-zinc-400"
+                className="border border-[var(--rule)] px-3 py-1 text-sm italic text-zinc-600 transition-colors hover:border-[var(--red-500)] hover:text-[var(--red-500)]"
               >
                 {ex}
               </button>
@@ -97,12 +97,12 @@ export default function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Escribí tu pregunta…"
           disabled={busy}
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+          className="field flex-1 disabled:opacity-55"
         />
         <button
           type="submit"
           disabled={busy || !input.trim()}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+          className="aoe-btn"
         >
           {busy ? "…" : "Enviar"}
         </button>
@@ -118,7 +118,7 @@ function Bubble({ message }: { message: Message }) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
           isUser
-            ? "bg-amber-500 text-white"
+            ? "dialog"
             : "border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
         }`}
       >

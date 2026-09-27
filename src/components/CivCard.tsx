@@ -16,7 +16,7 @@ export function CivCard({ civ }: { civ: CivListItem }) {
   return (
     <Link
       href={`/civs/${civ.slug}`}
-      className="group flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-center transition-all hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-amber-500/60"
+      className="surface surface-hover group flex flex-col items-center gap-2 p-4 text-center"
     >
       <Image
         src={civEmblemUrl(civ.slug)}
