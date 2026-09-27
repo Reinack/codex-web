@@ -45,11 +45,13 @@ export const UNIT_CATALOG: CatalogUnit[] = [
   { id: "skirmisher-line", label: "Skirm", imgKey: "skirmisher", kind: "generic", building: "archery" },
   { id: "hand-cannoneer", label: "HC", imgKey: "handcannon", kind: "generic", building: "archery" },
   { id: "cavalry-archer", label: "Cav Arch", imgKey: "cavarcher", kind: "generic", building: "archery" },
+  { id: "mounted-crossbowman", label: "Mtd Xbow", imgKey: "heavy_mounted_crossbow", kind: "regional", building: "archery" },
   { id: "elephant-archer", label: "Ele Arch", imgKey: "elephant_archer", kind: "regional", building: "archery" },
   { id: "slinger", label: "Slinger", imgKey: "slinger", kind: "regional", building: "archery" },
   { id: "xianbei-raider", label: "Xianbei", imgKey: "xianbei_raider", kind: "unique", building: "archery", uuName: "Xianbei Raider" },
   // Cuartel
   { id: "militia-line", label: "Militia", imgKey: "champion", kind: "generic", building: "barracks" },
+  { id: "varangian-guard", label: "Varangian", imgKey: "elite_varangian_guard", kind: "regional", building: "barracks" },
   { id: "spearman-line", label: "Halbs", imgKey: "halberdier", kind: "generic", building: "barracks" },
   { id: "eagle-warrior", label: "Eagle", imgKey: "eaglewarrior", kind: "regional", building: "barracks" },
   { id: "fire-lancer", label: "Fire Lanc", imgKey: "fire_lancer", kind: "regional", building: "barracks" },
@@ -82,7 +84,8 @@ export const UNIT_CATALOG: CatalogUnit[] = [
   { id: "catapult-galleon", label: "Catapult G.", imgKey: "catapult_gall", kind: "regional", building: "dock" },
   { id: "turtle-ship", label: "Turtle", imgKey: "turtle_ship", kind: "unique", building: "dock", uuName: "Turtle Ship" },
   { id: "caravel", label: "Caravel", imgKey: "caravel_d", kind: "unique", building: "dock", uuName: "Caravel" },
-  { id: "longboat", label: "Longboat", imgKey: "longboat", kind: "unique", building: "dock", uuName: "Longboat" },
+  // Ex Longboat vikingo: desde el Update 185872 es regional (Danes, Saxons, Varangians, Vikings).
+  { id: "longship", label: "Longship", imgKey: "longship", kind: "regional", building: "dock" },
   { id: "thirisadai", label: "Thirisadai", imgKey: "thirisadai", kind: "unique", building: "dock", uuName: "Thirisadai" },
   { id: "dragon-ship", label: "Dragon Sh", imgKey: "dragon_ship", kind: "unique", building: "dock", uuName: "Dragon Ship" },
   // Castillo (UUs por imagen)

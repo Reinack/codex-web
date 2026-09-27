@@ -69,11 +69,11 @@ const CORE_CATEGORIES = [0, 1, 2, 3];
  * Caballería; "Bombard Cannon" en Asedio, no en Arqueros. */
 function categoryIndex(label: string): number {
   const s = label.toLowerCase();
-  if (/galle|fire ship|fire galley|demolition|demo (raft|ship)|hulk|carrack|cannon galleon|longboat|caravel|turtle|dromon|thirisadai|dragon ship|lou chuan/.test(s)) return 4;
+  if (/galle|fire ship|fire galley|demolition|demo (raft|ship)|hulk|carrack|cannon galleon|longboat|longship|caravel|turtle|dromon|thirisadai|dragon ship|lou chuan/.test(s)) return 4;
   if (/ram|mangonel|onager|scorpion|trebuchet|bombard|siege/.test(s)) return 3;
   if (/monk|priest|missionar/.test(s)) return 5;
   if (/archer|crossbow|arbalest|skirmisher|longbow|mangudai|chu ko nu|chukonu|rattan|genitour|slinger|war wagon|kipchak|composite|hand cannon|janissary|conquistador|gbeto/.test(s)) return 2;
-  if (/cavalry|knight|cavalier|paladin|camel|lancer|elephant|cataphract|konnik|coustillier|tarkan|keshik|hussar|scout|boyar|shrivamsha|ratha|leitis|magyar|huszar|ghulam|savar|steppe/.test(s)) return 1;
+  if (/cavalry|knight|cavalier|paladin|camel|lancer|elephant|cataphract|konnik|coustillier|tarkan|keshik|hussar|scout|boyar|shrivamsha|ratha|leitis|magyar|huszar|ghulam|savar|steppe|jarl/.test(s)) return 1;
   return 0; // infantería por defecto
 }
 

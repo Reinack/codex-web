@@ -11,7 +11,8 @@ async function getJson(url: string): Promise<unknown> {
       body && typeof body === "object" && "error" in body
         ? String((body as { error: unknown }).error)
         : `Error ${res.status}`;
-    throw new Error(message);
+    // `status` permite a la UI distinguir "todavía sin datos" (404) de un fallo real.
+    throw Object.assign(new Error(message), { status: res.status });
   }
   return res.json();
 }
