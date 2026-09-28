@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import cytoscape, {
   type Core,
   type NodeDefinition,
@@ -79,6 +79,7 @@ export function GraphExplorer({
   }, [onSelect, onExplore]);
 
   // Tipos presentes → leyenda (se recalcula sólo si cambia el grafo).
+  const [showLegend, setShowLegend] = useState(false);
   const legend = useMemo(() => {
     const seen = new Map<string, string>();
     for (const n of graph.nodes) {
@@ -259,7 +260,24 @@ export function GraphExplorer({
     cy.on("mouseover", "node", () => (container.style.cursor = "pointer"));
     cy.on("mouseout", "node", () => (container.style.cursor = "default"));
 
+    // En celular el grafo puede montarse oculto (pestaña "Detalle"): Cytoscape
+    // arranca con tamaño 0. Al hacerse visible se redimensiona y reencuadra.
+    // También reencuadra si el ancho cambia mucho (rotar la tablet/celular).
+    let lastW = container.clientWidth;
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth;
+      if (w === 0) {
+        lastW = 0;
+        return;
+      }
+      cy.resize();
+      if (lastW === 0 || Math.abs(w - lastW) / lastW > 0.2) cy.fit(undefined, 40);
+      lastW = w;
+    });
+    ro.observe(container);
+
     return () => {
+      ro.disconnect();
       cy.destroy();
       cyRef.current = null;
     };
@@ -277,20 +295,25 @@ export function GraphExplorer({
       .run();
 
   return (
-    <div className="relative h-[max(560px,calc(100vh-260px))] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="relative h-[62vh] min-h-[360px] w-full overflow-hidden md:h-[max(460px,55vh)] lg:h-[max(560px,calc(100vh-260px))] rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
       <div ref={containerRef} className="h-full w-full" />
 
       {/* Toolbar de controles (estilo Bloom/Linkurious) */}
-      <div className="absolute right-3 top-3 flex flex-col gap-1 rounded-lg border border-zinc-200 bg-white/90 p-1 shadow-sm backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+      <div className="absolute right-2 top-2 flex flex-col gap-1 rounded-lg md:right-3 md:top-3 border border-zinc-200 bg-white/90 p-1 shadow-sm backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
         <ToolBtn label="Acercar" onClick={() => zoomBy(1.3)}>＋</ToolBtn>
         <ToolBtn label="Alejar" onClick={() => zoomBy(1 / 1.3)}>－</ToolBtn>
         <ToolBtn label="Ajustar a pantalla" onClick={fit}>⤢</ToolBtn>
         <ToolBtn label="Reorganizar" onClick={relayout}>⟳</ToolBtn>
+        {legend.length > 0 && (
+          <ToolBtn label="Leyenda" onClick={() => setShowLegend((v) => !v)} className="md:hidden">
+            ◧
+          </ToolBtn>
+        )}
       </div>
 
       {/* Leyenda de tipos */}
       {legend.length > 0 && (
-        <div className="absolute bottom-3 left-3 flex flex-col gap-1 rounded-lg border border-zinc-200 bg-white/90 p-2.5 text-xs shadow-sm backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+        <div className={`${showLegend ? "flex" : "hidden md:flex"} absolute bottom-2 left-2 flex-col gap-1 md:bottom-3 md:left-3 rounded-lg border border-zinc-200 bg-white/90 p-2.5 text-xs shadow-sm backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90`}>
           {legend.map((l) => (
             <span key={l.label} className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color }} />
@@ -300,7 +323,7 @@ export function GraphExplorer({
         </div>
       )}
 
-      <span className="absolute bottom-3 right-3 rounded-md bg-zinc-500/10 px-2 py-1 text-[11px] text-zinc-400">
+      <span className="absolute bottom-3 right-3 hidden rounded-md bg-zinc-500/10 px-2 py-1 text-[11px] text-zinc-400 md:block">
         doble click en un nodo para expandir
       </span>
     </div>
@@ -311,10 +334,12 @@ function ToolBtn({
   label,
   onClick,
   children,
+  className = "",
 }: {
   label: string;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
@@ -322,7 +347,7 @@ function ToolBtn({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-zinc-600 transition-colors hover:bg-amber-500/15 hover:text-amber-600 dark:text-zinc-300 dark:hover:text-amber-400"
+      className={`${className} flex h-9 w-9 items-center justify-center rounded-md text-lg md:h-8 md:w-8 leading-none text-zinc-600 transition-colors hover:bg-amber-500/15 hover:text-amber-600 dark:text-zinc-300 dark:hover:text-amber-400`}
     >
       {children}
     </button>
