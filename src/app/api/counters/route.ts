@@ -27,8 +27,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(enriched);
   } catch (err) {
     if (err instanceof CodexApiError) {
-      const status = err.status === 404 ? 404 : 502;
-      return NextResponse.json({ error: err.message }, { status });
+      if (err.status === 404) {
+        // Unidad todavía sin tabla de counters en el vault (p. ej. las regionales
+        // del Update 185872 antes de re-ingestar): mensaje para el usuario, no el
+        // error crudo del backend.
+        return NextResponse.json(
+          { error: `Todavía no hay counters documentados para “${unit}”. Van a aparecer cuando se actualice el grafo.` },
+          { status: 404 },
+        );
+      }
+      return NextResponse.json({ error: err.message }, { status: 502 });
     }
     const message = err instanceof Error ? err.message : "Error desconocido";
     return NextResponse.json({ error: message }, { status: 500 });

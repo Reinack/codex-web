@@ -209,9 +209,15 @@ export default function CountersPage() {
             </span>
           )}
           {graphQ.isError ? (
-            <div className="flex h-[480px] items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-600 dark:border-rose-900 dark:bg-rose-950/40">
-              {graphQ.error instanceof Error ? graphQ.error.message : "No se encontró la unidad."}
-            </div>
+            (graphQ.error as { status?: number }).status === 404 ? (
+              <div className="flex h-[480px] items-center justify-center border border-zinc-200 bg-zinc-50 p-6 text-center text-sm italic text-zinc-500">
+                {graphQ.error.message}
+              </div>
+            ) : (
+              <div className="flex h-[480px] items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-600 dark:border-rose-900 dark:bg-rose-950/40">
+                {graphQ.error instanceof Error ? graphQ.error.message : "No se encontró la unidad."}
+              </div>
+            )
           ) : buildable && filteredGraph?.unitId && !buildable.has(filteredGraph.unitId) ? (
             <div className="flex h-[480px] items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
               Ninguna de tus civs ({civFilterName}) puede construir{" "}

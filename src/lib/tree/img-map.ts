@@ -135,6 +135,13 @@ export const IMG_MAP: Record<string, string> = {
   turtle_ship: "img/Unit/116.png",
   longboat: "img/Unit/40.png", // renombrado a longship en el Update 185872
   longship: "img/Unit/40.png",
+  elite_longship: "img/Unit/474.png",
+
+  // Regionales nórdicas (Update 185872, The Viking Sagas)
+  mounted_crossbow: "img/Unit/900.png",
+  heavy_mounted_crossbow: "img/Unit/901.png",
+  varangian_guard: "img/Unit/902.png",
+  elite_varangian_guard: "img/Unit/903.png",
   caravel_d: "img/Unit/198.png",
 
   // Monastery
