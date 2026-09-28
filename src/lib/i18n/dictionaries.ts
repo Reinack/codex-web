@@ -18,6 +18,10 @@ export const DICTIONARIES: Record<Locale, Dict> = {
     "header.searchPlaceholder": "Buscar (ES/EN): Hostigador, Aztecas, Blo…",
 
     "production.title": "Calculadora de producción",
+    "production.tab.pick": "Agregar",
+    "production.tab.demand": "Demanda",
+    "production.tab.result": "Resultado",
+    "production.seeResult": "Ver detalle",
     "production.subtitle":
       "Cuántos aldeanos (y de qué recurso) necesitás para sostener la producción de tus unidades y edificios. Cada línea = un edificio produciendo sin parar.",
     "production.reset": "Limpiar",
@@ -105,6 +109,10 @@ export const DICTIONARIES: Record<Locale, Dict> = {
     "header.searchPlaceholder": "Search (ES/EN): Skirmisher, Aztecs, Blo…",
 
     "production.title": "Production calculator",
+    "production.tab.pick": "Add",
+    "production.tab.demand": "Demand",
+    "production.tab.result": "Result",
+    "production.seeResult": "See details",
     "production.subtitle":
       "How many villagers (and on which resource) you need to sustain production of your units and buildings. Each line = one building producing non-stop.",
     "production.reset": "Clear",

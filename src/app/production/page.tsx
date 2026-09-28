@@ -47,6 +47,9 @@ export default function ProductionPage() {
   const [civ, setCiv] = useState("");
   const [age, setAge] = useState("feudal");
   const [items, setItems] = useState<Record<string, number>>({});
+  // Celular: una sección por vez (agregar / demanda / resultado); en tablet y PC
+  // se ven todas juntas.
+  const [tab, setTab] = useState<"pick" | "demand" | "result">("pick");
   const [supply, setSupply] = useState<Supply>({
     bySource: {}, techs: [], contributors: [], passive: { relics: 0, tradeCarts: 0, feitorias: 0 },
   });
@@ -94,8 +97,8 @@ export default function ProductionPage() {
     <main className="flex flex-col gap-6">
       <Header t={t} />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-zinc-500">
+      <div className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap">
+        <label className="flex min-w-0 flex-col gap-1 text-xs text-zinc-500">
           Civilización / Civ
           <div className="flex items-center gap-2">
             {civ && (
@@ -105,7 +108,7 @@ export default function ProductionPage() {
             <select
               value={civ}
               onChange={(e) => setCiv(e.target.value)}
-              className="field field-select"
+              className="field field-select min-w-0 flex-1"
             >
               <option value="">Genérica / Generic</option>
               {catalog.civs.map((c) => (
@@ -114,7 +117,7 @@ export default function ProductionPage() {
             </select>
           </div>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        <label className="flex min-w-0 flex-col gap-1 text-xs text-zinc-500">
           Edad / Age
           <select
             value={age}
@@ -126,7 +129,7 @@ export default function ProductionPage() {
         </label>
         <button
           onClick={() => setItems({})}
-          className="field font-medium transition-colors hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400"
+          className="field col-span-2 font-medium transition-colors hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400"
         >
           {t("production.reset")}
         </button>
@@ -134,9 +137,33 @@ export default function ProductionPage() {
 
       <SupplyPanel catalog={catalog} supply={supply} setSupply={setSupply} t={t} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Celular: pestañas. Tablet: selector | demanda + resultado. PC: tres columnas
+          con el resultado fijo a la vista mientras se agregan unidades. */}
+      <nav className="flex border border-[var(--rule)] font-display text-[12px] font-bold tracking-[0.04em] md:hidden">
+        {(["pick", "demand", "result"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            aria-pressed={tab === k}
+            className={`flex-1 py-2.5 ${tab === k ? "bg-[var(--red-500)] text-[#f3e6c8]" : ""}`}
+          >
+            {t(`production.tab.${k}`)}
+            {k === "demand" && Object.keys(items).length > 0 ? ` (${Object.keys(items).length})` : ""}
+          </button>
+        ))}
+      </nav>
+
+      <div className="grid gap-4 pb-20 md:grid-cols-[1fr_minmax(320px,380px)] md:pb-0 xl:grid-cols-[1fr_340px_400px]">
+        {/* SELECTOR */}
+        <section className={`${tab === "pick" ? "flex" : "hidden md:flex"} surface min-w-0 flex-col gap-3 p-3 sm:p-4 md:row-span-2 xl:row-span-1`}>
+          <h2 className="hidden text-xs font-semibold uppercase tracking-wide text-zinc-500 md:block">
+            {t("production.tab.pick")}
+          </h2>
+          <ItemPicker items={visibleItems} counts={items} onAdd={addItem} />
+        </section>
+
         {/* DEMANDA */}
-        <section className="surface flex flex-col gap-3 p-4">
+        <section className={`${tab === "demand" ? "flex" : "hidden md:flex"} surface min-w-0 flex-col gap-3 p-3 sm:p-4 md:self-start xl:sticky xl:top-24 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto`}>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
             {t("production.demand")}
           </h2>
@@ -149,9 +176,9 @@ export default function ProductionPage() {
                 if (!it) return null;
                 return (
                   <li key={id} className="flex items-center gap-3 border-t border-zinc-100 py-2 first:border-t-0 dark:border-zinc-800">
-                    <ItemIcon item={it} className="h-7 w-7" />
-                    <div className="flex-1">
-                      <div className="text-sm">{it.name}</div>
+                    <ItemIcon item={it} className="h-8 w-8 md:h-7 md:w-7" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm">{it.name}</div>
                       <CostLine item={it} />
                     </div>
                     <Stepper value={lines} onChange={(n) => setLines(id, n)} />
@@ -161,11 +188,10 @@ export default function ProductionPage() {
               })}
             </ul>
           )}
-          <ItemPicker items={visibleItems} counts={items} onAdd={addItem} />
         </section>
 
         {/* RESULTADOS */}
-        <section className="surface flex flex-col gap-3 p-4">
+        <section className={`${tab === "result" ? "flex" : "hidden md:flex"} surface min-w-0 flex-col gap-3 p-3 sm:p-4 md:self-start xl:sticky xl:top-24`}>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
             {t("production.result")}
           </h2>
@@ -182,6 +208,32 @@ export default function ProductionPage() {
           )}
         </section>
       </div>
+
+      {/* Celular: resumen fijo abajo mientras se arma la demanda. */}
+      {request.items.length > 0 && tab !== "result" && (
+        <button
+          onClick={() => setTab("result")}
+          className="fixed inset-x-3 bottom-3 z-30 flex items-center gap-3 border border-[var(--gold)] bg-[#1b0f07]/95 px-4 py-2.5 text-left text-[#f3e6c8] shadow-lg md:hidden"
+        >
+          <span className="font-display text-2xl font-bold tabular-nums text-[var(--gold)]">
+            {prodQ.data ? prodQ.data.total : "…"}
+          </span>
+          <span className="flex-1 text-xs leading-tight">
+            {t("production.villagers")}
+            {prodQ.data && (
+              <span className="mt-0.5 flex gap-2 text-[11px] opacity-80">
+                {RES_ORDER.filter((r) => prodQ.data!.perResource[r].fillVillagers).map((r) => (
+                  <span key={r} className="inline-flex items-center gap-0.5">
+                    <ResIcon res={r} className="h-3 w-3" />
+                    {prodQ.data!.perResource[r].fillVillagers}
+                  </span>
+                ))}
+              </span>
+            )}
+          </span>
+          <span className="text-xs underline">{t("production.seeResult")}</span>
+        </button>
+      )}
     </main>
   );
 }
@@ -230,18 +282,41 @@ function CostLine({ item }: { item: EcoItem }) {
 function ItemPicker({
   items, counts, onAdd,
 }: { items: EcoItem[]; counts: Record<string, number>; onAdd: (id: string) => void }) {
+  const [picked, setPicked] = useState<string | null>(null);
   const groups: Record<string, EcoItem[]> = {};
   for (const it of items) (groups[it.category] ||= []).push(it);
   const cats = CAT_ORDER.filter((c) => groups[c]);
   if (!cats.length) {
     return <p className="text-xs text-zinc-500">Esta civilización no tiene items construibles cargados.</p>;
   }
+  // Celular: una categoría por vez, elegida desde una fila de chips.
+  const current = picked && cats.includes(picked) ? picked : cats[0];
   return (
-    <div className="flex flex-col gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+    <div className="flex flex-col gap-2">
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 md:hidden">
+        {cats.map((cat) => {
+          const n = groups[cat].reduce((acc, it) => acc + (counts[it.id] || 0), 0);
+          return (
+            <button
+              key={cat}
+              onClick={() => setPicked(cat)}
+              aria-pressed={cat === current}
+              className={`shrink-0 whitespace-nowrap border px-2.5 py-1.5 text-xs ${
+                cat === current
+                  ? "border-[var(--gold)] bg-[var(--red-500)] text-[#f3e6c8]"
+                  : "border-[var(--rule)]"
+              }`}
+            >
+              {CAT_LABEL[cat] || cat}
+              {n > 0 ? ` · ${n}` : ""}
+            </button>
+          );
+        })}
+      </div>
       {cats.map((cat) => (
-        <div key={cat} className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">{CAT_LABEL[cat] || cat}</span>
-          <div className="flex flex-wrap gap-1.5">
+        <div key={cat} className={`${cat === current ? "flex" : "hidden md:flex"} flex-col gap-1.5`}>
+          <span className="hidden text-[11px] font-semibold uppercase tracking-wide text-zinc-400 md:block">{CAT_LABEL[cat] || cat}</span>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-1.5 md:flex md:flex-wrap">
             {groups[cat].sort((a, b) => a.name.localeCompare(b.name)).map((it) => {
               const n = counts[it.id] || 0;
               const ring = it.variant === "unique" ? "border-l-2 border-l-violet-400"
@@ -251,7 +326,7 @@ function ItemPicker({
                   key={it.id}
                   onClick={() => onAdd(it.id)}
                   title={it.name}
-                  className={`group relative flex w-16 flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${ring} ${
+                  className={`group relative flex md:w-16 flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${ring} ${
                     n ? "border-amber-400 bg-amber-500/15 shadow-[0_0_0_3px_var(--ring)]"
                       : "border-zinc-200 hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-500/5 dark:border-zinc-700"
                   }`}
@@ -274,7 +349,7 @@ function ItemPicker({
 }
 
 function Stepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  const btn = "flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-base leading-none transition-colors hover:border-amber-400 dark:border-zinc-700";
+  const btn = "flex h-9 w-9 md:h-7 md:w-7 items-center justify-center rounded-md border border-zinc-300 text-base leading-none transition-colors hover:border-amber-400 dark:border-zinc-700";
   return (
     <div className="flex items-center gap-2">
       <button className={btn} onClick={() => onChange(value - 1)} aria-label="menos">−</button>
