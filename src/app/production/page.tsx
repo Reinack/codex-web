@@ -248,15 +248,29 @@ function Header({ t }: { t: (k: string) => string }) {
 }
 
 function ItemIcon({ item, className = "h-6 w-6" }: { item: EcoItem; className?: string }) {
+  const [broken, setBroken] = useState(false);
   const src = iconUrl(item.imgPath);
-  if (!src) return <span className={className} />;
+  // Sin ícono (p. ej. la Casa, que no está en el set del árbol) o si la imagen
+  // falla: ficha con las iniciales en vez de un hueco vacío.
+  if (!src || broken) {
+    const initials = item.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    return (
+      <span
+        role="img"
+        aria-label={item.name}
+        className={`${className} flex items-center justify-center rounded-sm bg-[#2a1a0e] font-display text-[10px] font-bold text-[var(--gold)] ring-1 ring-[var(--gold)]/40`}
+      >
+        {initials}
+      </span>
+    );
+  }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={item.name}
       className={`${className} object-contain`}
-      onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+      onError={() => setBroken(true)}
     />
   );
 }
