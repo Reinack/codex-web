@@ -7,6 +7,10 @@ import {
   MatchupSchema,
   CivListOutSchema,
   RadarSchema,
+  CatalogCountsSchema,
+  CatalogItemsSchema,
+  type CatalogCounts,
+  type CatalogItem,
   type RadarData,
   type SearchResult,
   type GraphData,
@@ -36,8 +40,9 @@ export async function fetchGraph(path: string): Promise<GraphData> {
   return GraphSchema.parse(await getJson(`/api/graph?path=${encodeURIComponent(path)}`));
 }
 
-export async function fetchNote(path: string): Promise<NoteData> {
-  return NoteSchema.parse(await getJson(`/api/note?path=${encodeURIComponent(path)}`));
+export async function fetchNote(path: string, content = false): Promise<NoteData> {
+  const qs = `path=${encodeURIComponent(path)}${content ? "&content=1" : ""}`;
+  return NoteSchema.parse(await getJson(`/api/note?${qs}`));
 }
 
 export async function fetchMatchup(me: string, vs: string, map: string): Promise<Matchup> {
@@ -54,4 +59,12 @@ export async function fetchCivRadar(slug: string): Promise<RadarData | null> {
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Error ${res.status}`);
   return RadarSchema.parse(await res.json());
+}
+
+export async function fetchCatalogCounts(): Promise<CatalogCounts> {
+  return CatalogCountsSchema.parse(await getJson(`/api/catalog`));
+}
+
+export async function fetchCatalog(type: string): Promise<CatalogItem[]> {
+  return CatalogItemsSchema.parse(await getJson(`/api/catalog?type=${encodeURIComponent(type)}`));
 }

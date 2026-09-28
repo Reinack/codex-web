@@ -169,7 +169,7 @@ export const GraphSchema = z.object({
 });
 export type GraphData = z.infer<typeof GraphSchema>;
 
-// --- GET /api/note?path=...  (nota + vecinos) ------------------------------
+// --- GET /api/note?path=...[&content=1]  (nota + vecinos [+ artículo]) -------
 export const NoteSchema = z.object({
   path: z.string(),
   title: z.string(),
@@ -185,6 +185,12 @@ export const NoteSchema = z.object({
       }),
     )
     .default([]),
+  // Solo con ?content=1: el artículo, una sección H2 por elemento (desde los :Chunk).
+  sections: z
+    .array(z.object({ heading: z.string(), text: z.string() }))
+    .default([]),
+  // Solo con ?content=1: destinos de sus [[wikilinks]] (LINKS_TO, sin límite).
+  links: z.array(z.object({ path: z.string(), title: z.string() })).default([]),
 });
 export type NoteData = z.infer<typeof NoteSchema>;
 
@@ -520,3 +526,20 @@ export const ChatResponseSchema = z.object({
     .default([]),
 });
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
+
+// --- GET /api/catalog[?type=...]  (notas por categoría del vault) -----------
+export const CatalogCountsSchema = z.array(
+  z.object({ type: z.string(), count: z.coerce.number() }),
+);
+export type CatalogCounts = z.infer<typeof CatalogCountsSchema>;
+
+export const CatalogItemsSchema = z.array(
+  z.object({
+    path: z.string(),
+    title: z.string(),
+    aliases: z.array(z.string()).nullable().default(null),
+    degree: z.coerce.number().default(0),
+    group: z.string().nullable().default(null),
+  }),
+);
+export type CatalogItem = z.infer<typeof CatalogItemsSchema>[number];

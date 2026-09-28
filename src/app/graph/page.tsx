@@ -4,8 +4,10 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { fetchGraph, fetchNote, fetchCivsClient } from "@/lib/api/explore-client";
+import { fetchGraph, fetchNote } from "@/lib/api/explore-client";
 import { GraphExplorer } from "@/components/GraphExplorer";
+import { GraphCatalog } from "@/components/GraphCatalog";
+import { NoteArticle } from "@/components/NoteArticle";
 import { pathToSlug, type NoteData } from "@/lib/api/schema";
 import { relLabel } from "@/lib/graph/rels";
 import { useT } from "@/lib/i18n/I18nProvider";
@@ -15,7 +17,12 @@ function GraphInner() {
   const router = useRouter();
   const params = useSearchParams();
   const path = params.get("path") ?? "";
-  const [selected, setSelected] = useState<string | null>(null);
+  // La selección vale para el centro actual: al cambiar de centro (explorar, back
+  // del navegador) el panel vuelve a mostrar el nodo central.
+  const [pick, setPick] = useState<{ center: string; node: string } | null>(null);
+  const selected = pick?.center === path ? pick.node : path || null;
+  const setSelected = (node: string | null) => setPick(node ? { center: path, node } : null);
+  const [tab, setTab] = useState<"article" | "links">("article");
 
   const graphQ = useQuery({
     queryKey: ["graph", path],
@@ -23,29 +30,39 @@ function GraphInner() {
     enabled: !!path,
   });
   const noteQ = useQuery({
-    queryKey: ["note", selected],
-    queryFn: () => fetchNote(selected!),
+    queryKey: ["note", selected, "content"],
+    queryFn: () => fetchNote(selected!, true),
     enabled: !!selected,
   });
 
   const explore = (p: string) => {
-    setSelected(null);
     router.push(`/graph?path=${encodeURIComponent(p)}`);
   };
 
-  if (!path) return <CivPicker onPick={explore} />;
+  if (!path)
+    return (
+      <main className="flex flex-col gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
+        <GraphCatalog onPick={explore} />
+      </main>
+    );
 
   return (
     <main className="flex flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
+          <Link href="/graph" className="text-sm hover:text-[var(--red-500)]">
+            {t("graph.backToCatalog")}
+          </Link>
+        </div>
         <p className="text-sm text-zinc-500">
           Centro: <span className="font-mono">{path}</span> · pasá el mouse para resaltar vecinos,
           click para ver el detalle, doble click para expandir desde ese nodo.
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_400px] 2xl:grid-cols-[1fr_460px]">
         <div className="relative">
           {graphQ.isFetching && (
             <span className="absolute right-3 top-3 z-10 rounded-full bg-zinc-900/80 px-2 py-1 text-xs text-white">
@@ -68,32 +85,63 @@ function GraphInner() {
           )}
         </div>
 
-        <aside className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <aside className="surface flex min-h-[320px] flex-col gap-3 p-4 text-sm lg:h-[max(560px,calc(100vh-260px))]">
           {!selected ? (
             <p className="text-zinc-500">{t("graph.clickNode")}</p>
           ) : noteQ.isLoading ? (
             <p className="text-zinc-500">cargando…</p>
           ) : noteQ.data ? (
             <>
-              <h2 className="text-base font-semibold">{noteQ.data.title}</h2>
-              {noteQ.data.type && <span className="text-xs text-zinc-500">{noteQ.data.type}</span>}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => explore(selected)}
-                  className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
-                >
-                  {t("graph.explore")}
-                </button>
+              <div className="flex flex-col gap-1">
+                <h2 className="font-display text-lg font-bold leading-tight">{noteQ.data.title}</h2>
+                <span className="text-xs text-zinc-500">
+                  {[noteQ.data.type, ...(noteQ.data.aliases ?? [])].filter(Boolean).join(" · ")}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selected !== path && (
+                  <button onClick={() => explore(selected)} className="aoe-btn px-3 py-1 text-xs">
+                    {t("graph.explore")}
+                  </button>
+                )}
                 {selected.startsWith("civs/") && (
                   <Link
                     href={`/civs/${pathToSlug(selected).toLowerCase()}`}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs dark:border-zinc-700"
+                    className="field px-3 py-1 text-xs hover:text-[var(--red-500)]"
                   >
                     {t("graph.viewCard")}
                   </Link>
                 )}
               </div>
-              <NeighborGroups neighbors={noteQ.data.neighbors} onPick={setSelected} />
+              <div className="flex border-b border-[var(--rule)] font-display text-[12px] font-bold tracking-[0.04em]">
+                {(["article", "links"] as const).map((k) => {
+                  const active = (noteQ.data.sections.length ? tab : "links") === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => setTab(k)}
+                      disabled={k === "article" && !noteQ.data.sections.length}
+                      aria-pressed={active}
+                      className={`-mb-px border-b-2 px-3 py-1.5 transition-colors disabled:opacity-40 ${
+                        active
+                          ? "border-[var(--red-500)] text-[var(--red-500)]"
+                          : "border-transparent hover:text-[var(--red-500)]"
+                      }`}
+                    >
+                      {k === "article"
+                        ? t("graph.article")
+                        : `${t("graph.connections")} (${noteQ.data.neighbors.length})`}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="min-h-0 flex-1 overflow-auto pr-1">
+                {tab === "article" && noteQ.data.sections.length ? (
+                  <NoteArticle note={noteQ.data} onPick={setSelected} />
+                ) : (
+                  <NeighborGroups neighbors={noteQ.data.neighbors} onPick={setSelected} />
+                )}
+              </div>
             </>
           ) : (
             <p className="text-zinc-500">Sin datos del nodo.</p>
@@ -141,7 +189,7 @@ function NeighborGroups({
   }
 
   return (
-    <div className="flex max-h-80 flex-col gap-3 overflow-auto">
+    <div className="flex flex-col gap-3">
       {entries.map(([label, items]) => (
         <div key={label} className="flex flex-col gap-1">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
@@ -166,36 +214,6 @@ function NeighborGroups({
   );
 }
 
-function CivPicker({ onPick }: { onPick: (path: string) => void }) {
-  const t = useT();
-  const { data, isLoading } = useQuery({ queryKey: ["civs"], queryFn: fetchCivsClient });
-  return (
-    <main className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
-        <p className="text-sm text-zinc-500">
-          {t("graph.pickCiv")}
-        </p>
-      </header>
-      {isLoading ? (
-        <p className="text-sm text-zinc-500">cargando civilizaciones…</p>
-      ) : (
-        <ul className="flex flex-wrap gap-2">
-          {data?.map((c) => (
-            <li key={c.slug}>
-              <button
-                onClick={() => onPick(`civs/${c.name}.md`)}
-                className="rounded-full border border-zinc-300 px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:border-amber-400 dark:border-zinc-700 dark:text-zinc-400"
-              >
-                {c.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  );
-}
 
 export default function GraphPage() {
   return (

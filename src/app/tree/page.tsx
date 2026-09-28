@@ -23,7 +23,7 @@ export default function TreePage() {
       <iframe
         src={src}
         title="Árbol tecnológico de AoE2"
-        className="h-[82vh] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800"
+        className="h-[calc(100vh-190px)] min-h-[600px] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800"
         loading="lazy"
       />
     </main>

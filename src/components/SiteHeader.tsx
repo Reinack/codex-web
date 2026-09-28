@@ -20,8 +20,8 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { t, locale, setLocale } = useI18n();
   return (
-    <header className="on-dark sticky top-0 z-20 border-b border-[var(--gold-line)] bg-[#24140b] bg-[image:var(--wood)] bg-fixed shadow-[0_1px_0_0_#0b0603,0_6px_18px_rgba(0,0,0,0.45)]">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+    <header className="on-dark sticky top-0 z-20 border-b border-[var(--gold-line)] bg-[#140a05] bg-[image:linear-gradient(rgba(10,5,2,0.72),rgba(10,5,2,0.72)),var(--wood)] bg-fixed shadow-[0_1px_0_0_#0b0603,0_6px_18px_rgba(0,0,0,0.45)]">
+      <div className="mx-auto flex max-w-none flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 2xl:px-8">
         <Link href="/" className="flex items-center gap-2 font-display text-[15px] font-bold tracking-[0.06em] text-[var(--on-dark)]">
           <svg viewBox="0 0 24 24" className="h-5 w-5 text-[var(--gold)]" fill="none" aria-hidden>
             <path d="M6.5 7 12 17M17.5 7 12 17M7.2 6h9.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -42,8 +42,8 @@ export function SiteHeader() {
                 aria-current={active ? "page" : undefined}
                 className={`relative px-2.5 py-1.5 transition-colors ${
                   active
-                    ? "text-[var(--gold-text)]"
-                    : "text-[var(--on-dark-dim)] hover:bg-[rgba(138,24,18,0.35)] hover:text-[var(--on-dark)]"
+                    ? "bg-[linear-gradient(180deg,#9a1c14,#6e120c)] text-[var(--on-dark)] shadow-[inset_0_0_0_1px_var(--gold)]"
+                    : "text-[var(--on-dark-dim)] hover:bg-[rgba(138,24,18,0.55)] hover:text-[var(--on-dark)]"
                 }`}
               >
                 {active && (
@@ -65,7 +65,7 @@ export function SiteHeader() {
                 className={`px-1.5 py-1 uppercase transition-colors ${
                   locale === l
                     ? "text-[var(--gold-text)] shadow-[inset_0_0_0_1px_var(--gold)]"
-                    : "text-[var(--on-dark-dim)] hover:bg-[rgba(138,24,18,0.35)] hover:text-[var(--on-dark)]"
+                    : "text-[var(--on-dark-dim)] hover:bg-[rgba(138,24,18,0.55)] hover:text-[var(--on-dark)]"
                 }`}
               >
                 {l}
