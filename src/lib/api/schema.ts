@@ -520,3 +520,20 @@ export const ChatResponseSchema = z.object({
     .default([]),
 });
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
+
+// --- GET /api/catalog[?type=...]  (notas por categoría del vault) -----------
+export const CatalogCountsSchema = z.array(
+  z.object({ type: z.string(), count: z.coerce.number() }),
+);
+export type CatalogCounts = z.infer<typeof CatalogCountsSchema>;
+
+export const CatalogItemsSchema = z.array(
+  z.object({
+    path: z.string(),
+    title: z.string(),
+    aliases: z.array(z.string()).nullable().default(null),
+    degree: z.coerce.number().default(0),
+    group: z.string().nullable().default(null),
+  }),
+);
+export type CatalogItem = z.infer<typeof CatalogItemsSchema>[number];

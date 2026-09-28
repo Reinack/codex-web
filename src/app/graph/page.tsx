@@ -4,8 +4,9 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { fetchGraph, fetchNote, fetchCivsClient } from "@/lib/api/explore-client";
+import { fetchGraph, fetchNote } from "@/lib/api/explore-client";
 import { GraphExplorer } from "@/components/GraphExplorer";
+import { GraphCatalog } from "@/components/GraphCatalog";
 import { pathToSlug, type NoteData } from "@/lib/api/schema";
 import { relLabel } from "@/lib/graph/rels";
 import { useT } from "@/lib/i18n/I18nProvider";
@@ -33,19 +34,30 @@ function GraphInner() {
     router.push(`/graph?path=${encodeURIComponent(p)}`);
   };
 
-  if (!path) return <CivPicker onPick={explore} />;
+  if (!path)
+    return (
+      <main className="flex flex-col gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
+        <GraphCatalog onPick={explore} />
+      </main>
+    );
 
   return (
     <main className="flex flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
+          <Link href="/graph" className="text-sm hover:text-[var(--red-500)]">
+            {t("graph.backToCatalog")}
+          </Link>
+        </div>
         <p className="text-sm text-zinc-500">
           Centro: <span className="font-mono">{path}</span> · pasá el mouse para resaltar vecinos,
           click para ver el detalle, doble click para expandir desde ese nodo.
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_300px] 2xl:grid-cols-[1fr_380px]">
         <div className="relative">
           {graphQ.isFetching && (
             <span className="absolute right-3 top-3 z-10 rounded-full bg-zinc-900/80 px-2 py-1 text-xs text-white">
@@ -141,7 +153,7 @@ function NeighborGroups({
   }
 
   return (
-    <div className="flex max-h-80 flex-col gap-3 overflow-auto">
+    <div className="flex max-h-[60vh] flex-col gap-3 overflow-auto">
       {entries.map(([label, items]) => (
         <div key={label} className="flex flex-col gap-1">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
@@ -166,36 +178,6 @@ function NeighborGroups({
   );
 }
 
-function CivPicker({ onPick }: { onPick: (path: string) => void }) {
-  const t = useT();
-  const { data, isLoading } = useQuery({ queryKey: ["civs"], queryFn: fetchCivsClient });
-  return (
-    <main className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
-        <p className="text-sm text-zinc-500">
-          {t("graph.pickCiv")}
-        </p>
-      </header>
-      {isLoading ? (
-        <p className="text-sm text-zinc-500">cargando civilizaciones…</p>
-      ) : (
-        <ul className="flex flex-wrap gap-2">
-          {data?.map((c) => (
-            <li key={c.slug}>
-              <button
-                onClick={() => onPick(`civs/${c.name}.md`)}
-                className="rounded-full border border-zinc-300 px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:border-amber-400 dark:border-zinc-700 dark:text-zinc-400"
-              >
-                {c.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  );
-}
 
 export default function GraphPage() {
   return (

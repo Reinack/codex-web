@@ -277,7 +277,7 @@ export function GraphExplorer({
       .run();
 
   return (
-    <div className="relative h-[600px] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="relative h-[max(560px,calc(100vh-260px))] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
       <div ref={containerRef} className="h-full w-full" />
 
       {/* Toolbar de controles (estilo Bloom/Linkurious) */}

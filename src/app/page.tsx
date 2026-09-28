@@ -165,7 +165,7 @@ export default function Home() {
         <span className="border border-[var(--rule)] px-3 py-0.5 text-sm italic text-[var(--ink-700)]">
           Neo4j · GraphRAG · 1000+ notas
         </span>
-        <h1 className="max-w-3xl text-3xl leading-tight sm:text-[2.6rem]">
+        <h1 className="max-w-3xl text-3xl leading-tight sm:text-[2.6rem] xl:text-[3.2rem]">
           El grafo de conocimiento de{" "}
           <span className="text-[var(--red-500)]">
             Age of Empires II

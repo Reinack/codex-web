@@ -131,7 +131,7 @@ export function CounterGraph({
   return (
     <div
       ref={containerRef}
-      className="h-[520px] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+      className="h-[max(520px,calc(100vh-320px))] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
     />
   );
 }
