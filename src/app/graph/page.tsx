@@ -23,6 +23,9 @@ function GraphInner() {
   const selected = pick?.center === path ? pick.node : path || null;
   const setSelected = (node: string | null) => setPick(node ? { center: path, node } : null);
   const [tab, setTab] = useState<"article" | "links">("article");
+  // Celular: el panel y el grafo no entran juntos; se alterna. Por defecto el
+  // detalle (leer el artículo es lo más útil en pantalla chica).
+  const [mobileView, setMobileView] = useState<"detail" | "graph">("detail");
 
   const graphQ = useQuery({
     queryKey: ["graph", path],
@@ -56,14 +59,27 @@ function GraphInner() {
             {t("graph.backToCatalog")}
           </Link>
         </div>
-        <p className="text-sm text-zinc-500">
+        <p className="hidden text-sm text-zinc-500 md:block">
           Centro: <span className="font-mono">{path}</span> · pasá el mouse para resaltar vecinos,
           click para ver el detalle, doble click para expandir desde ese nodo.
         </p>
       </header>
 
+      <nav className="flex border border-[var(--rule)] font-display text-[12px] font-bold tracking-[0.04em] md:hidden">
+        {(["detail", "graph"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setMobileView(v)}
+            aria-pressed={mobileView === v}
+            className={`flex-1 py-2.5 ${mobileView === v ? "bg-[var(--red-500)] text-[#f3e6c8]" : ""}`}
+          >
+            {v === "detail" ? t("graph.detail") : t("graph.graph")}
+          </button>
+        ))}
+      </nav>
+
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_400px] 2xl:grid-cols-[1fr_460px]">
-        <div className="relative">
+        <div className={`relative min-w-0 ${mobileView === "graph" ? "" : "hidden md:block"}`}>
           {graphQ.isFetching && (
             <span className="absolute right-3 top-3 z-10 rounded-full bg-zinc-900/80 px-2 py-1 text-xs text-white">
               cargando…
@@ -85,7 +101,7 @@ function GraphInner() {
           )}
         </div>
 
-        <aside className="surface flex min-h-[320px] flex-col gap-3 p-4 text-sm lg:h-[max(560px,calc(100vh-260px))]">
+        <aside className={`${mobileView === "detail" ? "flex" : "hidden md:flex"} surface min-w-0 flex-col gap-3 p-3 text-sm sm:p-4 md:max-h-[70vh] lg:h-[max(560px,calc(100vh-260px))] lg:max-h-none`}>
           {!selected ? (
             <p className="text-zinc-500">{t("graph.clickNode")}</p>
           ) : noteQ.isLoading ? (
@@ -148,6 +164,24 @@ function GraphInner() {
           )}
         </aside>
       </div>
+
+      {/* Celular, pestaña Grafo: ficha del nodo tocado para no perder el contexto. */}
+      {mobileView === "graph" && selected && noteQ.data && (
+        <div className="fixed inset-x-3 bottom-3 z-30 flex items-center gap-2 border border-[var(--gold)] bg-[#1b0f07]/95 px-3 py-2 text-[#f3e6c8] shadow-lg md:hidden">
+          <span className="min-w-0 flex-1 truncate font-display text-sm font-bold">{noteQ.data.title}</span>
+          {selected !== path && (
+            <button onClick={() => explore(selected)} className="shrink-0 border border-[var(--gold)] px-2.5 py-1.5 text-xs">
+              {t("graph.explore")}
+            </button>
+          )}
+          <button
+            onClick={() => setMobileView("detail")}
+            className="shrink-0 bg-[var(--red-500)] px-2.5 py-1.5 text-xs"
+          >
+            {t("graph.article")}
+          </button>
+        </div>
+      )}
     </main>
   );
 }
