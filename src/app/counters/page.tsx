@@ -262,8 +262,26 @@ function UnitGrid({
   buildable: Set<string> | null;
   onPick: (id: string) => void;
 }) {
+  // Tablet y celular: una sola tira de íconos sin separar por edificio, solo con
+  // lo que se puede usar (las civs elegidas o, sin civ, las unidades genéricas).
+  const compact = UNIT_CATALOG.filter((u) =>
+    buildable ? buildable.has(u.id) : u.kind !== "regional",
+  );
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white/60 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+    <>
+    <div className="flex flex-wrap gap-1.5 rounded-xl border border-zinc-200 bg-white/60 p-2 xl:hidden dark:border-zinc-800 dark:bg-zinc-900/40">
+      {compact.map((u) => (
+        <UnitButton
+          key={u.id}
+          unit={u}
+          active={current === u.id}
+          disabled={false}
+          compact
+          onClick={() => onPick(u.id)}
+        />
+      ))}
+    </div>
+    <div className="hidden flex-col gap-3 rounded-xl border border-zinc-200 bg-white/60 p-3 xl:flex dark:border-zinc-800 dark:bg-zinc-900/40">
       {BUILDINGS.map(({ key, label }) => {
         const units = UNIT_CATALOG.filter((u) => u.building === key);
         if (units.length === 0) return null;
@@ -287,6 +305,7 @@ function UnitGrid({
         );
       })}
     </div>
+    </>
   );
 }
 
@@ -300,11 +319,14 @@ function UnitButton({
   unit,
   active,
   disabled,
+  compact = false,
   onClick,
 }: {
   unit: CatalogUnit;
   active: boolean;
   disabled: boolean;
+  /** Solo ícono; el nombre aparece como globo al pasar el mouse o tocar. */
+  compact?: boolean;
   onClick: () => void;
 }) {
   const src = unitIconUrl(unit.imgKey);
@@ -313,7 +335,7 @@ function UnitButton({
       onClick={onClick}
       disabled={disabled}
       title={disabled ? `No construible — ${unit.label}` : `${unit.label} (${KIND_LABEL[unit.kind]})`}
-      className={`flex w-[68px] flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${
+      className={`group relative flex ${compact ? "w-11" : "w-[68px]"} flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${
         active
           ? "border-amber-400 bg-amber-500/15 ring-1 ring-amber-400"
           : KIND_RING[unit.kind]
@@ -324,7 +346,13 @@ function UnitButton({
       ) : (
         <span className="text-base">⚔️</span>
       )}
-      <span className="w-full truncate text-[10px] text-zinc-600 dark:text-zinc-400">{unit.label}</span>
+      {compact ? (
+        <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 hidden -translate-x-1/2 whitespace-nowrap bg-[#060402]/90 px-1.5 py-0.5 text-[11px] text-[#e4d4b0] group-hover:block group-focus-visible:block">
+          {unit.label}
+        </span>
+      ) : (
+        <span className="w-full truncate text-[10px] text-zinc-600 dark:text-zinc-400">{unit.label}</span>
+      )}
     </button>
   );
 }
