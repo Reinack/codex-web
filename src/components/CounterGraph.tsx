@@ -76,8 +76,6 @@ export function CounterGraph({
           selector: "node",
           style: {
             "background-color": "data(color)",
-            "background-image": "data(img)",
-            "background-fit": "cover",
             "border-width": 4,
             "border-color": "data(color)",
             width: 54,
@@ -96,6 +94,12 @@ export function CounterGraph({
             "text-background-shape": "rectangle",
             "font-family": "Crimson Pro, Georgia, serif",
           },
+        },
+        // Solo los nodos con ícono: un "background-image" vacío (unidad nueva que
+        // todavía no está en IMG_MAP) hace que Cytoscape tire abajo todo el grafo.
+        {
+          selector: "node[?img]",
+          style: { "background-image": "data(img)", "background-fit": "cover" },
         },
         {
           selector: 'node[type="center"]',
