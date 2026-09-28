@@ -7,11 +7,14 @@ export async function GET(req: NextRequest) {
   if (!path) {
     return NextResponse.json({ error: "Falta el parámetro 'path'." }, { status: 400 });
   }
+  const content = req.nextUrl.searchParams.get("content") === "1" ? "&content=1" : "";
   try {
     const data = await fetchCodex(
-      `/api/note?path=${encodeURIComponent(path)}`,
+      `/api/note?path=${encodeURIComponent(path)}${content}`,
       NoteSchema,
-      { revalidate: REVALIDATE.civs },
+      // Con artículo, 1 h: si el front sale antes que el backend nuevo, la respuesta
+      // sin `sections`/`links` no queda pegada un día entero.
+      { revalidate: content ? REVALIDATE.counters : REVALIDATE.civs },
     );
     return NextResponse.json(data);
   } catch (err) {

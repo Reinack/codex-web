@@ -40,8 +40,9 @@ export async function fetchGraph(path: string): Promise<GraphData> {
   return GraphSchema.parse(await getJson(`/api/graph?path=${encodeURIComponent(path)}`));
 }
 
-export async function fetchNote(path: string): Promise<NoteData> {
-  return NoteSchema.parse(await getJson(`/api/note?path=${encodeURIComponent(path)}`));
+export async function fetchNote(path: string, content = false): Promise<NoteData> {
+  const qs = `path=${encodeURIComponent(path)}${content ? "&content=1" : ""}`;
+  return NoteSchema.parse(await getJson(`/api/note?${qs}`));
 }
 
 export async function fetchMatchup(me: string, vs: string, map: string): Promise<Matchup> {

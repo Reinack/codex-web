@@ -169,7 +169,7 @@ export const GraphSchema = z.object({
 });
 export type GraphData = z.infer<typeof GraphSchema>;
 
-// --- GET /api/note?path=...  (nota + vecinos) ------------------------------
+// --- GET /api/note?path=...[&content=1]  (nota + vecinos [+ artículo]) -------
 export const NoteSchema = z.object({
   path: z.string(),
   title: z.string(),
@@ -185,6 +185,12 @@ export const NoteSchema = z.object({
       }),
     )
     .default([]),
+  // Solo con ?content=1: el artículo, una sección H2 por elemento (desde los :Chunk).
+  sections: z
+    .array(z.object({ heading: z.string(), text: z.string() }))
+    .default([]),
+  // Solo con ?content=1: destinos de sus [[wikilinks]] (LINKS_TO, sin límite).
+  links: z.array(z.object({ path: z.string(), title: z.string() })).default([]),
 });
 export type NoteData = z.infer<typeof NoteSchema>;
 
