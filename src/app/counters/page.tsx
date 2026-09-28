@@ -178,30 +178,33 @@ export default function CountersPage() {
         )}
       </div>
 
-      {/* Grilla de unidades por edificio */}
-      <UnitGrid current={unit} buildable={buildable} onPick={search} />
+      {/* xl+: grilla de unidades | grafo | detalle, todo a la vista sin scrollear.
+          Más angosto: apilado como antes. */}
+      <div className="grid gap-4 xl:grid-cols-[minmax(300px,360px)_1fr_300px]">
+        <div className="flex flex-col gap-3 xl:max-h-[max(520px,calc(100vh-320px))] xl:overflow-y-auto xl:pr-1">
+        {/* Grilla de unidades por edificio */}
+        <UnitGrid current={unit} buildable={buildable} onPick={search} />
 
-      {/* UUs dinámicas de las civs elegidas */}
-      {dynamicUUs.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            {t("counters.uuOfYourCivs")}
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {dynamicUUs.map((uu) => (
-              <button
-                key={uu.title}
-                onClick={() => search(uu.title)}
-                className="rounded-full border border-violet-400/50 bg-violet-500/10 px-3 py-1 text-xs text-violet-700 transition-colors hover:bg-violet-500/20 dark:text-violet-300"
-              >
-                {uu.title}
-              </button>
-            ))}
+        {/* UUs dinámicas de las civs elegidas */}
+        {dynamicUUs.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              {t("counters.uuOfYourCivs")}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {dynamicUUs.map((uu) => (
+                <button
+                  key={uu.title}
+                  onClick={() => search(uu.title)}
+                  className="rounded-full border border-violet-400/50 bg-violet-500/10 px-3 py-1 text-xs text-violet-700 transition-colors hover:bg-violet-500/20 dark:text-violet-300"
+                >
+                  {uu.title}
+                </button>
+              ))}
+            </div>
           </div>
+        )}
         </div>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
         <div className="relative">
           {graphQ.isFetching && (
             <span className="absolute right-3 top-3 z-10 rounded-full bg-zinc-900/80 px-2 py-1 text-xs text-white">
