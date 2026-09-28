@@ -24,6 +24,8 @@ export default function CountersPage() {
   const [input, setInput] = useState("");
   const [selected, setSelected] = useState<CyNodeData | null>(null);
   const [civSlugs, setCivSlugs] = useState<string[]>([]);
+  // Celular: lista legible por defecto; el grafo radial queda como opción.
+  const [view, setView] = useState<"list" | "graph">("list");
 
   const civsQ = useQuery({ queryKey: ["civs"], queryFn: fetchCivsClient });
 
@@ -178,31 +180,50 @@ export default function CountersPage() {
         )}
       </div>
 
-      {/* Grilla de unidades por edificio */}
-      <UnitGrid current={unit} buildable={buildable} onPick={search} />
+      {/* xl+: grilla de unidades | grafo | detalle, todo a la vista sin scrollear.
+          Más angosto: apilado como antes. */}
+      <div className="grid gap-4 xl:grid-cols-[minmax(300px,360px)_1fr_300px]">
+        <div className="flex min-w-0 flex-col gap-3 xl:max-h-[max(520px,calc(100vh-320px))] xl:overflow-y-auto xl:pr-1">
+        {/* Grilla de unidades por edificio */}
+        <UnitGrid current={unit} buildable={buildable} onPick={search} />
 
-      {/* UUs dinámicas de las civs elegidas */}
-      {dynamicUUs.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            {t("counters.uuOfYourCivs")}
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {dynamicUUs.map((uu) => (
-              <button
-                key={uu.title}
-                onClick={() => search(uu.title)}
-                className="rounded-full border border-violet-400/50 bg-violet-500/10 px-3 py-1 text-xs text-violet-700 transition-colors hover:bg-violet-500/20 dark:text-violet-300"
-              >
-                {uu.title}
-              </button>
-            ))}
+        {/* UUs dinámicas de las civs elegidas */}
+        {dynamicUUs.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              {t("counters.uuOfYourCivs")}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {dynamicUUs.map((uu) => (
+                <button
+                  key={uu.title}
+                  onClick={() => search(uu.title)}
+                  className="rounded-full border border-violet-400/50 bg-violet-500/10 px-3 py-1 text-xs text-violet-700 transition-colors hover:bg-violet-500/20 dark:text-violet-300"
+                >
+                  {uu.title}
+                </button>
+              ))}
+            </div>
           </div>
+        )}
         </div>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-        <div className="relative">
+        <div className="flex min-w-0 flex-col gap-3">
+        <div className="flex border border-[var(--rule)] font-display text-[12px] font-bold tracking-[0.04em] md:hidden">
+          {(["list", "graph"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              aria-pressed={view === v}
+              className={`flex-1 py-2 ${view === v ? "bg-[var(--red-500)] text-[#f3e6c8]" : ""}`}
+            >
+              {v === "list" ? t("counters.viewList") : t("counters.viewGraph")}
+            </button>
+          ))}
+        </div>
+        {view === "list" && filteredGraph && (
+          <CounterList graph={filteredGraph} onPick={search} />
+        )}
+        <div className={`relative ${view === "list" ? "hidden md:block" : ""}`}>
           {graphQ.isFetching && (
             <span className="absolute right-3 top-3 z-10 rounded-full bg-zinc-900/80 px-2 py-1 text-xs text-white">
               cargando…
@@ -229,8 +250,9 @@ export default function CountersPage() {
             <div className="h-[480px] animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900" />
           )}
         </div>
+        </div>
 
-        <aside className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <aside className={`${view === "list" ? "hidden md:flex" : "flex"} flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900`}>
           {selected ? (
             <SelectedPanel data={selected} />
           ) : (
@@ -259,8 +281,27 @@ function UnitGrid({
   buildable: Set<string> | null;
   onPick: (id: string) => void;
 }) {
+  // Tablet y celular: una sola tira de íconos sin separar por edificio, solo con
+  // lo que se puede usar (las civs elegidas o, sin civ, solo las genéricas: ni
+  // regionales ni únicas). En celular es una fila con scroll horizontal.
+  const compact = UNIT_CATALOG.filter((u) =>
+    buildable ? buildable.has(u.id) : u.kind === "generic",
+  );
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white/60 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+    <>
+    <div className="flex gap-1.5 overflow-x-auto rounded-xl border border-zinc-200 bg-white/60 p-2 md:flex-wrap md:overflow-visible xl:hidden dark:border-zinc-800 dark:bg-zinc-900/40">
+      {compact.map((u) => (
+        <UnitButton
+          key={u.id}
+          unit={u}
+          active={current === u.id}
+          disabled={false}
+          compact
+          onClick={() => onPick(u.id)}
+        />
+      ))}
+    </div>
+    <div className="hidden flex-col gap-3 rounded-xl border border-zinc-200 bg-white/60 p-3 xl:flex dark:border-zinc-800 dark:bg-zinc-900/40">
       {BUILDINGS.map(({ key, label }) => {
         const units = UNIT_CATALOG.filter((u) => u.building === key);
         if (units.length === 0) return null;
@@ -284,6 +325,7 @@ function UnitGrid({
         );
       })}
     </div>
+    </>
   );
 }
 
@@ -297,11 +339,14 @@ function UnitButton({
   unit,
   active,
   disabled,
+  compact = false,
   onClick,
 }: {
   unit: CatalogUnit;
   active: boolean;
   disabled: boolean;
+  /** Solo ícono; el nombre aparece como globo al pasar el mouse o tocar. */
+  compact?: boolean;
   onClick: () => void;
 }) {
   const src = unitIconUrl(unit.imgKey);
@@ -310,7 +355,7 @@ function UnitButton({
       onClick={onClick}
       disabled={disabled}
       title={disabled ? `No construible — ${unit.label}` : `${unit.label} (${KIND_LABEL[unit.kind]})`}
-      className={`flex w-[68px] flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${
+      className={`group relative flex ${compact ? "w-11 shrink-0" : "w-[68px]"} flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${
         active
           ? "border-amber-400 bg-amber-500/15 ring-1 ring-amber-400"
           : KIND_RING[unit.kind]
@@ -321,8 +366,102 @@ function UnitButton({
       ) : (
         <span className="text-base">⚔️</span>
       )}
-      <span className="w-full truncate text-[10px] text-zinc-600 dark:text-zinc-400">{unit.label}</span>
+      {compact ? (
+        <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 hidden -translate-x-1/2 whitespace-nowrap bg-[#060402]/90 px-1.5 py-0.5 text-[11px] text-[#e4d4b0] group-hover:block group-focus-visible:block">
+          {unit.label}
+        </span>
+      ) : (
+        <span className="w-full truncate text-[10px] text-zinc-600 dark:text-zinc-400">{unit.label}</span>
+      )}
     </button>
+  );
+}
+
+// Vista de celular: los counters como lista agrupada por fuerza, con ícono,
+// tier y la nota desplegable. Tocar una unidad del catálogo la busca.
+const STRENGTH: { key: string; label: string; color: string }[] = [
+  { key: "hard", label: "Fuerte", color: "#9b2b1a" },
+  { key: "soft", label: "Media", color: "#83551d" },
+  { key: "situational", label: "Situacional", color: "#6f5234" },
+];
+
+function CounterList({
+  graph,
+  onPick,
+}: {
+  graph: CounterGraphData;
+  onPick: (id: string) => void;
+}) {
+  const t = useT();
+  const center = graph.nodes.find((n) => n.data.type === "center")?.data;
+  const others = graph.nodes.map((n) => n.data).filter((d) => d.type !== "center");
+  const sections = [
+    { title: t("counters.countersYou"), items: others.filter((d) => d.dir !== "beats"), good: false },
+    { title: t("counters.youBeat"), items: others.filter((d) => d.dir === "beats"), good: true },
+  ];
+  const inCatalog = (uid: unknown) =>
+    typeof uid === "string" && UNIT_CATALOG.some((u) => u.id === uid) ? uid : null;
+
+  return (
+    <div className="flex flex-col gap-4 md:hidden">
+      {center && (
+        <div className="surface flex items-center gap-3 p-3">
+          {center.img ? (
+            <Image src={center.img} alt="" width={44} height={44} unoptimized className="h-11 w-11 border-2 border-[var(--gold)] object-contain" />
+          ) : null}
+          <h2 className="font-display text-base font-bold leading-tight">{graph.heading}</h2>
+        </div>
+      )}
+      {sections.map(({ title, items, good }) =>
+        items.length === 0 ? null : (
+          <section key={title} className="flex flex-col gap-2">
+            <h3 className={`font-display text-[13px] font-bold uppercase tracking-[0.06em] ${good ? "text-[#3d6b17]" : "text-[var(--red-500)]"}`}>
+              {title} ({items.length})
+            </h3>
+            {STRENGTH.map(({ key, label, color }) => {
+              const list = items.filter((d) => (d.type || "").replace("beats-", "") === key);
+              if (list.length === 0) return null;
+              return (
+                <ul key={key} className="surface flex flex-col divide-y divide-[var(--rule-soft)]">
+                  <li className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" style={{ color }}>
+                    {label}
+                  </li>
+                  {list.map((d) => {
+                    const target = inCatalog(d.uid);
+                    const name = (typeof d.full === "string" && d.full) || d.label || d.id;
+                    return (
+                      <li key={d.id} className="px-3 py-2">
+                        <div className="flex items-center gap-3">
+                          {d.img ? (
+                            <Image src={d.img} alt="" width={36} height={36} unoptimized className="h-9 w-9 shrink-0 object-contain" style={{ border: `2px solid ${color}` }} />
+                          ) : (
+                            <span className="h-9 w-9 shrink-0" style={{ background: color }} />
+                          )}
+                          {target ? (
+                            <button onClick={() => onPick(target)} className="flex-1 text-left text-sm font-semibold underline decoration-[var(--gold)] underline-offset-2">
+                              {name}
+                            </button>
+                          ) : (
+                            <span className="flex-1 text-sm font-semibold">{name}</span>
+                          )}
+                          {d.tier ? <span className="shrink-0 text-[10px] uppercase text-zinc-500">{d.tier}</span> : null}
+                        </div>
+                        {typeof d.nota === "string" && d.nota ? (
+                          <details className="mt-1 pl-12 text-xs text-zinc-600">
+                            <summary className="cursor-pointer text-[11px] text-zinc-500">{t("counters.why")}</summary>
+                            <p className="mt-1 leading-relaxed">{d.nota}</p>
+                          </details>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })}
+          </section>
+        ),
+      )}
+    </div>
   );
 }
 

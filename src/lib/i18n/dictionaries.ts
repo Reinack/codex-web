@@ -61,6 +61,11 @@ export const DICTIONARIES: Record<Locale, Dict> = {
 
     // Counters
     "counters.title": "Grafo de counters",
+    "counters.viewList": "Lista",
+    "counters.viewGraph": "Grafo",
+    "counters.countersYou": "La counterean",
+    "counters.youBeat": "Le gana a",
+    "counters.why": "Por qué",
     "counters.subtitle":
       "Elegí una unidad de la grilla o buscala: el centro es la unidad, alrededor lo que la counterea y a lo que ella le gana. Agregá civilizaciones para filtrar por lo que pueden construir.",
     "counters.addCiv": "+ Agregar civilización…",
@@ -146,6 +151,11 @@ export const DICTIONARIES: Record<Locale, Dict> = {
     "matchups.analyzing": "Analyzing the matchup…",
 
     "counters.title": "Counters graph",
+    "counters.viewList": "List",
+    "counters.viewGraph": "Graph",
+    "counters.countersYou": "Countered by",
+    "counters.youBeat": "Beats",
+    "counters.why": "Why",
     "counters.subtitle":
       "Pick a unit from the grid or search it: the center is the unit, around it what counters it and what it beats. Add civilizations to filter by what they can build.",
     "counters.addCiv": "+ Add civilization…",
