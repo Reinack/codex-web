@@ -9,6 +9,7 @@ import { RadarChart } from "@/components/RadarChart";
 import { getCivRadar } from "@/lib/api/radar";
 import { PHASE_AXES, CATEGORY_AXES, RADAR_MAX } from "@/lib/radar/data";
 import { buildRadarPlan } from "@/lib/radar/plan";
+import { productionHref } from "@/lib/production/plan";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -75,6 +76,12 @@ export default async function CivDetailPage({ params }: Params) {
           {civ.aliases.length > 0 && (
             <p className="text-sm text-zinc-500">{civ.aliases.join(" · ")}</p>
           )}
+          <Link
+            href={productionHref({ civ: civ.slug })}
+            className="mt-1 inline-block text-sm font-semibold text-[var(--red-500)] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+          >
+            Planificar su producción →
+          </Link>
         </div>
       </header>
 
