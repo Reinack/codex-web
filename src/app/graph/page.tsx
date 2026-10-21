@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchGraph, fetchNote } from "@/lib/api/explore-client";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { GraphCatalog } from "@/components/GraphCatalog";
+import { GraphCatalogTree } from "@/components/GraphCatalogTree";
 import { NoteArticle } from "@/components/NoteArticle";
 import { pathToSlug, type NoteData } from "@/lib/api/schema";
 import { relLabel } from "@/lib/graph/rels";
@@ -55,7 +56,7 @@ function GraphInner() {
       <header className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
-          <Link href="/graph" className="text-sm hover:text-[var(--red-500)]">
+          <Link href="/graph" className="text-sm hover:text-[var(--red-500)] xl:hidden">
             {t("graph.backToCatalog")}
           </Link>
         </div>
@@ -78,7 +79,14 @@ function GraphInner() {
         ))}
       </nav>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_400px] 2xl:grid-cols-[1fr_460px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_340px] xl:grid-cols-[260px_1fr_400px] 2xl:grid-cols-[300px_1fr_460px]">
+        {/* Pantallas grandes: el catálogo queda a la izquierda, en árbol desplegable. */}
+        <aside className="surface hidden min-w-0 flex-col gap-2 p-3 xl:flex xl:h-[max(560px,calc(100vh-260px))]">
+          <h2 className="font-display text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--red-500)]">
+            {t("graph.catalog")}
+          </h2>
+          <GraphCatalogTree current={path} onPick={explore} />
+        </aside>
         <div className={`relative min-w-0 ${mobileView === "graph" ? "" : "hidden md:block"}`}>
           {graphQ.isFetching && (
             <span className="absolute right-3 top-3 z-10 rounded-full bg-zinc-900/80 px-2 py-1 text-xs text-white">
