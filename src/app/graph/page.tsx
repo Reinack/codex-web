@@ -186,17 +186,21 @@ function GraphInner() {
   );
 }
 
-// Orden de relevancia: las relaciones tipadas (counters, UU, tier…) antes que el
-// genérico "relacionado con" (LINKS_TO).
+// Orden de relevancia por tipo de relación: lo que define a la entidad (su línea de
+// mejora, qué la mejora, dónde se hace, quién la tiene) primero; las menciones
+// genéricas (LINKS_TO) al final. Los tipos que no están van antes de RELATED_TO.
 const REL_ORDER = [
-  "counterea a",
-  "unidad única de",
-  "tecnología única de",
-  "se mejora a",
-  "rankeada en",
-  "define",
-  "tiene",
+  "UPGRADES_TO", "HAS_UNIQUE_UNIT", "HAS_UNIQUE_TECH", "IMPROVES", "AFFECTS",
+  "REQUIRES", "ENABLES", "TRAINS", "RESEARCHES", "COUNTERS", "BONUS_ON",
+  "HAS_MATCHUP", "FAVORS", "PLAYED_ON", "IS_TYPE", "SUITS", "USES",
+  "RANKS", "RATED", "FEATURES", "CHANGES", "SYNERGY_WITH", "BENEFITS_FROM",
+  "HAS_UNIT", "HAS_TECH", "HAS_BUILDING", "LACKS", "DEFINES",
+  "RELATED_TO", "LINKS_TO",
 ];
+const relRank = (rel?: string | null) => {
+  const i = REL_ORDER.indexOf(rel ?? "LINKS_TO");
+  return i < 0 ? REL_ORDER.length - 2 : i;
+};
 
 function NeighborGroups({
   neighbors,
@@ -206,17 +210,17 @@ function NeighborGroups({
   onPick: (path: string) => void;
 }) {
   const t = useT();
+  // Agrupa por etiqueta (tipo + sentido): "evoluciona a" y "evoluciona de" van aparte.
   const groups = new Map<string, NoteData["neighbors"]>();
   for (const nb of neighbors) {
-    const k = relLabel(nb.rel);
+    const k = relLabel(nb.rel, nb.out);
     if (!groups.has(k)) groups.set(k, []);
-    groups.get(k)!.push(nb);
+    // Las simétricas (sinergia en equipo) traen al mismo vecino en los dos sentidos.
+    if (!groups.get(k)!.some((x) => x.path === nb.path)) groups.get(k)!.push(nb);
   }
-  const entries = [...groups.entries()].sort((a, b) => {
-    const ia = REL_ORDER.indexOf(a[0]);
-    const ib = REL_ORDER.indexOf(b[0]);
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-  });
+  const entries = [...groups.entries()].sort(
+    (a, b) => relRank(a[1][0].rel) - relRank(b[1][0].rel),
+  );
 
   if (entries.length === 0) {
     return <p className="text-xs text-zinc-400">{t("graph.noConnections")}</p>;

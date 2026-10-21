@@ -182,6 +182,8 @@ export const NoteSchema = z.object({
         title: z.string(),
         type: z.string().nullable().default(null),
         rel: z.string().nullable().default(null),
+        // true: la relación sale de esta nota; false: entra (cambia la etiqueta).
+        out: z.boolean().default(true),
       }),
     )
     .default([]),
