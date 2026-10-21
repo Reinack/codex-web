@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchGraph, fetchNote } from "@/lib/api/explore-client";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { GraphCatalog } from "@/components/GraphCatalog";
+import { GraphCatalogTree } from "@/components/GraphCatalogTree";
 import { NoteArticle } from "@/components/NoteArticle";
 import { pathToSlug, type NoteData } from "@/lib/api/schema";
 import { relLabel } from "@/lib/graph/rels";
@@ -55,7 +56,7 @@ function GraphInner() {
       <header className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
-          <Link href="/graph" className="text-sm hover:text-[var(--red-500)]">
+          <Link href="/graph" className="text-sm hover:text-[var(--red-500)] xl:hidden">
             {t("graph.backToCatalog")}
           </Link>
         </div>
@@ -78,7 +79,14 @@ function GraphInner() {
         ))}
       </nav>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_400px] 2xl:grid-cols-[1fr_460px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_340px] xl:grid-cols-[260px_1fr_400px] 2xl:grid-cols-[300px_1fr_460px]">
+        {/* Pantallas grandes: el catálogo queda a la izquierda, en árbol desplegable. */}
+        <aside className="surface hidden min-w-0 flex-col gap-2 p-3 xl:flex xl:h-[max(560px,calc(100vh-260px))]">
+          <h2 className="font-display text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--red-500)]">
+            {t("graph.catalog")}
+          </h2>
+          <GraphCatalogTree current={path} onPick={explore} />
+        </aside>
         <div className={`relative min-w-0 ${mobileView === "graph" ? "" : "hidden md:block"}`}>
           {graphQ.isFetching && (
             <span className="absolute right-3 top-3 z-10 rounded-full bg-zinc-900/80 px-2 py-1 text-xs text-white">
@@ -186,17 +194,21 @@ function GraphInner() {
   );
 }
 
-// Orden de relevancia: las relaciones tipadas (counters, UU, tier…) antes que el
-// genérico "relacionado con" (LINKS_TO).
+// Orden de relevancia por tipo de relación: lo que define a la entidad (su línea de
+// mejora, qué la mejora, dónde se hace, quién la tiene) primero; las menciones
+// genéricas (LINKS_TO) al final. Los tipos que no están van antes de RELATED_TO.
 const REL_ORDER = [
-  "counterea a",
-  "unidad única de",
-  "tecnología única de",
-  "se mejora a",
-  "rankeada en",
-  "define",
-  "tiene",
+  "UPGRADES_TO", "HAS_UNIQUE_UNIT", "HAS_UNIQUE_TECH", "IMPROVES", "AFFECTS",
+  "REQUIRES", "ENABLES", "TRAINS", "RESEARCHES", "COUNTERS", "BONUS_ON",
+  "HAS_MATCHUP", "FAVORS", "PLAYED_ON", "IS_TYPE", "SUITS", "USES",
+  "RANKS", "RATED", "FEATURES", "CHANGES", "SYNERGY_WITH", "BENEFITS_FROM",
+  "HAS_UNIT", "HAS_TECH", "HAS_BUILDING", "LACKS", "DEFINES",
+  "RELATED_TO", "LINKS_TO",
 ];
+const relRank = (rel?: string | null) => {
+  const i = REL_ORDER.indexOf(rel ?? "LINKS_TO");
+  return i < 0 ? REL_ORDER.length - 2 : i;
+};
 
 function NeighborGroups({
   neighbors,
@@ -206,17 +218,17 @@ function NeighborGroups({
   onPick: (path: string) => void;
 }) {
   const t = useT();
+  // Agrupa por etiqueta (tipo + sentido): "evoluciona a" y "evoluciona de" van aparte.
   const groups = new Map<string, NoteData["neighbors"]>();
   for (const nb of neighbors) {
-    const k = relLabel(nb.rel);
+    const k = relLabel(nb.rel, nb.out);
     if (!groups.has(k)) groups.set(k, []);
-    groups.get(k)!.push(nb);
+    // Las simétricas (sinergia en equipo) traen al mismo vecino en los dos sentidos.
+    if (!groups.get(k)!.some((x) => x.path === nb.path)) groups.get(k)!.push(nb);
   }
-  const entries = [...groups.entries()].sort((a, b) => {
-    const ia = REL_ORDER.indexOf(a[0]);
-    const ib = REL_ORDER.indexOf(b[0]);
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-  });
+  const entries = [...groups.entries()].sort(
+    (a, b) => relRank(a[1][0].rel) - relRank(b[1][0].rel),
+  );
 
   if (entries.length === 0) {
     return <p className="text-xs text-zinc-400">{t("graph.noConnections")}</p>;

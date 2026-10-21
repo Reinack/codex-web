@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCivsClient, fetchMatchup, fetchCivRadar } from "@/lib/api/explore-client";
 import type {
@@ -21,6 +22,7 @@ import { PHASE_AXES, CATEGORY_AXES, RADAR_MAX, getCivRadarFallback } from "@/lib
 import { buildRadarPlan } from "@/lib/radar/plan";
 import { buildCivSignatureCombo, type CivCombo, type CivComboLine } from "@/lib/matchup/combo";
 import { useT } from "@/lib/i18n/I18nProvider";
+import { productionHref } from "@/lib/production/plan";
 
 const ME_COLOR = "#8a1812";
 const VS_COLOR = "#2a5d86";
@@ -251,8 +253,8 @@ export default function MatchupsPage() {
             return (
               <Section title="Combo insignia" hint="la composición que define a cada civ">
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <CivComboCard title={`Tu combo — ${m.data.me.title}`} combo={meCombo} accent="me" />
-                  <CivComboCard title={`Combo del rival — ${m.data.vs.title}`} combo={vsCombo} accent="vs" />
+                  <CivComboCard title={`Tu combo — ${m.data.me.title}`} combo={meCombo} accent="me" planHref={comboPlanHref(m.data.me.slug, meCombo)} />
+                  <CivComboCard title={`Combo del rival — ${m.data.vs.title}`} combo={vsCombo} accent="vs" planHref={comboPlanHref(m.data.vs.slug, vsCombo)} />
                 </div>
               </Section>
             );
@@ -989,14 +991,26 @@ function toCivLines(lines?: CivLine[]): CivComboLine[] {
 // Combo insignia de la civ: categoría dominante + sus líneas clave (apertura →
 // pico de poder), con bonus, unidad única e identidad. Espejo de la página
 // /civilizations de la referencia (identidad estratégica + unidades signature).
+// Enlace al planificador de producción con las unidades núcleo del combo (las dos
+// últimas líneas de apertura → pico de poder; imgKey coincide con el id del catálogo
+// de producción) y la civ ya elegida. Pico de poder = Imperial.
+function comboPlanHref(civSlug: string, combo: CivCombo | null): string {
+  const lines = (combo?.units ?? [])
+    .slice(-2)
+    .flatMap((u) => (u.imgKey ? [{ itemId: u.imgKey, buildings: 2 }] : []));
+  return productionHref({ civ: civSlug, age: "imperial", lines });
+}
+
 function CivComboCard({
   title,
   combo,
   accent,
+  planHref,
 }: {
   title: string;
   combo: CivCombo | null;
   accent: "me" | "vs";
+  planHref?: string;
 }) {
   const bar = accent === "me" ? "bg-amber-500" : "bg-sky-500";
   const ring = accent === "me" ? "border-amber-500/30" : "border-sky-500/30";
@@ -1048,6 +1062,15 @@ function CivComboCard({
           )}
           {combo.why && <p className="text-xs text-zinc-500 dark:text-zinc-400">{combo.why}</p>}
         </div>
+      )}
+
+      {planHref && (
+        <Link
+          href={planHref}
+          className="mt-3 inline-block text-xs font-semibold text-[var(--red-500)] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+        >
+          Planificar su producción →
+        </Link>
       )}
     </section>
   );

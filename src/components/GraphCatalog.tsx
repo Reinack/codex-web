@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCatalog, fetchCatalogCounts } from "@/lib/api/explore-client";
 import type { CatalogItem } from "@/lib/api/schema";
-import { useT } from "@/lib/i18n/I18nProvider";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { catalogLabel, compareGroupKeys, groupKey, splitGroup } from "@/lib/graph/catalog";
 
 // Categorías del vault (carpeta = n.type), en orden de interés para explorar.
-const CATEGORIES = [
+export const CATEGORIES = [
   "units",
   "technologies",
   "buildings",
@@ -18,15 +19,11 @@ const CATEGORIES = [
   "meta",
 ] as const;
 
-// Subcarpetas del vault → etiqueta legible ("archery" → "Archery", "unique-techs" → "Unique techs").
-function groupLabel(g: string | null): string {
-  if (!g) return "General";
-  const s = g.replace(/[-_]/g, " ");
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+// Clave de grupo de una nota (catalogo de la wiki o subcarpeta): ver lib/graph/catalog.
+export const groupLabel = groupKey;
 
 export function GraphCatalog({ onPick }: { onPick: (path: string) => void }) {
-  const t = useT();
+  const { t, locale } = useI18n();
   const [type, setType] = useState<string>("units");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"alpha" | "degree">("alpha");
@@ -61,14 +58,12 @@ export function GraphCatalog({ onPick }: { onPick: (path: string) => void }) {
     );
     const map = new Map<string, CatalogItem[]>();
     for (const it of sorted) {
-      const k = groupLabel(it.group);
+      const k = groupKey(it.group);
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(it);
     }
-    // "General" (notas sueltas en la raíz de la categoría) va al final.
-    return [...map.entries()].sort((a, b) =>
-      a[0] === "General" ? 1 : b[0] === "General" ? -1 : a[0].localeCompare(b[0]),
-    );
+    // Orden de los navboxes de Fandom; "Panoramas"/"General" al final.
+    return [...map.entries()].sort((a, b) => compareGroupKeys(a[0], b[0]));
   }, [itemsQ.data, q, sort]);
 
   const maxDegree = Math.max(1, ...(itemsQ.data ?? []).map((it) => it.degree));
@@ -132,7 +127,9 @@ export function GraphCatalog({ onPick }: { onPick: (path: string) => void }) {
         </div>
         {itemsQ.data && (
           <span className="text-xs text-zinc-500">
-            {groups.reduce((n, [, items]) => n + items.length, 0)} / {itemsQ.data.length}
+            {/* notas únicas: un matchup aparece bajo sus dos civs */}
+            {new Set(groups.flatMap(([, items]) => items.map((it) => it.path))).size} /{" "}
+            {new Set(itemsQ.data.map((it) => it.path)).size}
           </span>
         )}
       </div>
@@ -149,15 +146,25 @@ export function GraphCatalog({ onPick }: { onPick: (path: string) => void }) {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {groups.map(([label, items]) => (
-            <div key={label} className="surface flex min-w-0 flex-col gap-1.5 p-3">
+          {groups.map(([label, items], i) => {
+            const { section, group } = splitGroup(label);
+            const prev = i > 0 ? splitGroup(groups[i - 1][0]).section : null;
+            return (
+            <Fragment key={label}>
+            {/* Encabezado de sección (Genéricas, Únicas…) cuando cambia */}
+            {section && section !== prev && (
+              <h3 className="col-span-full mt-1 font-display text-[13px] font-bold uppercase tracking-[0.08em] text-zinc-500">
+                {catalogLabel(section, locale)}
+              </h3>
+            )}
+            <div className="surface flex min-w-0 flex-col gap-1.5 p-3">
               <button
                 onClick={() => toggle(label)}
                 aria-expanded={open.has(label) || !!q}
                 className="flex items-center justify-between text-left font-display text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--red-500)] md:pointer-events-none"
               >
                 <span>
-                  {label} <span className="text-zinc-500">({items.length})</span>
+                  {catalogLabel(group, locale)} <span className="text-zinc-500">({items.length})</span>
                 </span>
                 <span className="text-zinc-500 md:hidden">{open.has(label) || q ? "−" : "+"}</span>
               </button>
@@ -186,7 +193,9 @@ export function GraphCatalog({ onPick }: { onPick: (path: string) => void }) {
                 ))}
               </ul>
             </div>
-          ))}
+            </Fragment>
+            );
+          })}
         </div>
       )}
     </section>
