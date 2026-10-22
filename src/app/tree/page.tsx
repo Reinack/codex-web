@@ -8,22 +8,18 @@ export const metadata: Metadata = {
 
 // El árbol es una app d3 standalone (sub-proyecto Aoe2-Tech-Tree-Advanced) que el
 // backend sirve en /tree/. La embebemos: reusar el sub-app es lo correcto en vez
-// de re-portar miles de líneas de d3 a React.
+// de re-portar miles de líneas de d3 a React. Va sin hoja de papiro ni título
+// visible (ContentFrame): ocupa todo el alto bajo el encabezado del sitio (62 px
+// de encabezado + 16 px de margen).
 export default function TreePage() {
   const src = `${env.CODEX_API_BASE}/tree/`;
   return (
-    <main className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Árbol tecnológico</h1>
-        <p className="text-sm text-zinc-500">
-          Elegí una civilización en el panel del árbol; click en una unidad/tech abre su
-          ficha (con datos del grafo del codex).
-        </p>
-      </header>
+    <main className="flex flex-col">
+      <h1 className="sr-only">Árbol tecnológico</h1>
       <iframe
         src={src}
         title="Árbol tecnológico de AoE2"
-        className="h-[calc(100vh-190px)] min-h-[600px] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800"
+        className="h-[calc(100vh-78px)] min-h-[600px] w-full border border-[var(--gold-line)] bg-white"
         loading="lazy"
       />
     </main>
