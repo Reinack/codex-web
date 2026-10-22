@@ -69,6 +69,8 @@
   --papyrus: linear-gradient(180deg, rgba(240, 222, 184, 0.55), rgba(214, 184, 136, 0.55)), var(--paper);
   --papyrus-text: #3a1c0e;
   /* Papiro claro: tarjetas sobre un panel de papiro (p. ej. el resumen de counters) */
+  /* Papiro casi blanco: campos donde se escribe (se distinguen de los desplegables) */
+  --papyrus-input: linear-gradient(180deg, rgba(255, 253, 246, 0.9), rgba(252, 247, 232, 0.9)), var(--paper);
   --papyrus-light: linear-gradient(180deg, rgba(255, 248, 228, 0.66), rgba(248, 234, 204, 0.66)), var(--paper);
   /* Barra de desplazamiento: botones de acero con flecha y ornamento en el pulgar */
   --sb-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%235a524a'/%3E%3Cstop offset='1' stop-color='%232a231d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='.5' y='.5' width='15' height='15' fill='url(%23g)' stroke='%23050302'/%3E%3Crect x='1.5' y='1.5' width='13' height='13' fill='none' stroke='%23fffaf0' stroke-opacity='.16'/%3E%3Cpath d='M8 4.2L12.3 11H3.7Z' fill='%23d6cfc4' stroke='%231a130e' stroke-width='.8' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -271,11 +273,12 @@ h1, h2, h3 {
   box-shadow: 0 0 0 1px #000, 0 12px 30px rgba(0, 0, 0, 0.6);
 }
 
-/* Controles de formulario: papiro con filete de tinta. */
+/* Controles de formulario: papiro con filete de tinta. Los campos de texto van en
+   papiro casi blanco; los desplegables (field-select) conservan el papiro. */
 @utility field {
   border-radius: 0;
   border: 1px solid rgba(58, 28, 14, 0.55);
-  background: var(--papyrus);
+  background: var(--papyrus-input);
   color: var(--papyrus-text);
   font-family: var(--font-body);
   font-weight: 600;
@@ -285,6 +288,13 @@ h1, h2, h3 {
   outline: none;
   &::placeholder { color: rgba(58, 28, 14, 0.6); font-weight: 400; font-style: italic; }
   &:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 1px; }
+  /* Desplegables: papiro y flecha de acero. Va acá (más específico) porque
+     Tailwind emite `field` después de `field-select` y le pisaba el fondo. */
+  &:is(select) {
+    appearance: none;
+    padding-right: 2.2rem;
+    background: var(--sb-down) right 0.35rem center / 18px 18px no-repeat, var(--papyrus);
+  }
 }
 /* Flecha del desplegable: el botón de acero de la barra de desplazamiento. */
 @utility field-select {
