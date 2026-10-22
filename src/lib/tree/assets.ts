@@ -8,3 +8,8 @@ export function unitIconUrl(imgKey?: string): string {
   const path = IMG_MAP[imgKey];
   return path ? `/api/icon?p=${encodeURIComponent(path)}` : "";
 }
+
+/** Ícono por ruta del árbol ("img/Unit/8.png"), tal como la manda /api/graph. */
+export function treeIconUrl(path?: string | null): string {
+  return path ? `/api/icon?p=${encodeURIComponent(path)}` : "";
+}

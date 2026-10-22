@@ -9,6 +9,7 @@ import cytoscape, {
 import fcose from "cytoscape-fcose";
 import type { GraphData } from "@/lib/api/schema";
 import { relLabel } from "@/lib/graph/rels";
+import { treeIconUrl } from "@/lib/tree/assets";
 
 // Registrar el layout force-directed (idempotente entre HMR/recargas).
 let fcoseRegistered = false;
@@ -115,6 +116,7 @@ export function GraphExplorer({
         color: colorForType(n.type),
         degree: degree.get(n.id) ?? 0,
         center: n.id === centerId ? 1 : 0,
+        ...(n.icon ? { icon: treeIconUrl(n.icon) } : {}),
       },
     }));
     const edges: EdgeDefinition[] = graph.edges.map((e, i) => ({
@@ -149,6 +151,21 @@ export function GraphExplorer({
             height: `mapData(degree, 0, ${maxDeg}, 26, 60)`,
             "transition-property": "opacity, border-color, border-width",
             "transition-duration": 150,
+          },
+        },
+        // Entidad del juego (civ/unidad/tech/edificio): su ícono sobre pergamino,
+        // con el color del tipo en el borde para que la leyenda siga valiendo.
+        // Recortado al círculo: el PNG cuadrado no asoma por fuera del nodo.
+        {
+          selector: "node[icon]",
+          style: {
+            "background-image": "data(icon)",
+            "background-fit": "cover",
+            "background-clip": "node",
+            "background-color": textBg,
+            "border-color": "data(color)",
+            width: `mapData(degree, 0, ${maxDeg}, 34, 64)`,
+            height: `mapData(degree, 0, ${maxDeg}, 34, 64)`,
           },
         },
         {
