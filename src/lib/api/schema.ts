@@ -157,6 +157,8 @@ export const GraphSchema = z.object({
       id: z.string(),
       label: z.string().nullable().default(null),
       type: z.string().nullable().default(null),
+      // Ruta del ícono relativa a /tree/ (civs, unidades, techs, edificios).
+      icon: z.string().nullable().default(null),
     }),
   ),
   edges: z.array(

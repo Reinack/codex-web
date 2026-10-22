@@ -13,11 +13,15 @@ import { pathToSlug, type NoteData } from "@/lib/api/schema";
 import { relLabel } from "@/lib/graph/rels";
 import { useT } from "@/lib/i18n/I18nProvider";
 
+// Nodo de apertura: /graph sin ?path= abre las Preguntas frecuentes. El catálogo
+// a pantalla completa queda en /graph?catalog=1 (en xl+ ya está en la columna izquierda).
+const GRAPH_HOME = "meta/preguntas-frecuentes.md";
+
 function GraphInner() {
   const t = useT();
   const router = useRouter();
   const params = useSearchParams();
-  const path = params.get("path") ?? "";
+  const path = params.get("path") || (params.has("catalog") ? "" : GRAPH_HOME);
   // La selección vale para el centro actual: al cambiar de centro (explorar, back
   // del navegador) el panel vuelve a mostrar el nodo central.
   const [pick, setPick] = useState<{ center: string; node: string } | null>(null);
@@ -56,7 +60,7 @@ function GraphInner() {
       <header className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{t("graph.title")}</h1>
-          <Link href="/graph" className="text-sm hover:text-[var(--red-500)] xl:hidden">
+          <Link href="/graph?catalog=1" className="text-sm hover:text-[var(--red-500)] xl:hidden">
             {t("graph.backToCatalog")}
           </Link>
         </div>
