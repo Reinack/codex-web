@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchCounterGraph, fetchCivUnits } from "@/lib/api/counters-client";
 import { fetchCivsClient } from "@/lib/api/explore-client";
 import { CounterGraph } from "@/components/CounterGraph";
-import { unitIconUrl } from "@/lib/tree/assets";
+import { treeIconUrl, unitIconUrl } from "@/lib/tree/assets";
 import { civEmblemUrl } from "@/lib/img";
 import { UNIT_CATALOG, BUILDINGS, KIND_LABEL, isShownUnit, type CatalogUnit } from "@/lib/counters/units";
 import { AGES, arrivesAfter, countByType, filterByAge, isAge, type Age } from "@/lib/counters/age";
@@ -97,7 +97,7 @@ function Counters() {
       UNIT_CATALOG.filter((u) => u.uuName).map((u) => u.uuName!.toLowerCase()),
     );
     const seen = new Set<string>();
-    const out: { title: string; treeId?: string | null }[] = [];
+    const out: { title: string; treeId?: string | null; imgPath?: unknown }[] = [];
     for (const c of selectedCivs)
       for (const uu of c.uniqueUnits) {
         const k = uu.title.toLowerCase();
@@ -267,8 +267,11 @@ function Counters() {
                 <button
                   key={uu.title}
                   onClick={() => search(uu.title)}
-                  className="rounded-full border border-violet-400/50 bg-violet-500/10 px-3 py-1 text-xs text-violet-700 transition-colors hover:bg-violet-500/20 dark:text-violet-300"
+                  className="flex items-center gap-1.5 rounded-full border border-violet-400/50 bg-violet-500/10 py-1 pl-1.5 pr-3 text-xs text-violet-700 transition-colors hover:bg-violet-500/20 dark:text-violet-300"
                 >
+                  {typeof uu.imgPath === "string" && uu.imgPath ? (
+                    <Image src={treeIconUrl(uu.imgPath)} alt="" width={20} height={20} unoptimized className="h-5 w-5 object-contain" />
+                  ) : null}
                   {uu.title}
                 </button>
               ))}
