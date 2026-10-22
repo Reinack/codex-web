@@ -117,6 +117,8 @@ export const CounterGraphSchema = z.object({
   edges: z.array(z.object({ data: CyEdgeDataSchema })),
   notes: z.array(z.string()).default([]),
   source: z.string(),
+  // Civs dueñas de la unidad única buscada (solo en source='unique-desc').
+  uuCivs: z.array(z.string()).optional(),
 });
 export type CounterGraph = z.infer<typeof CounterGraphSchema>;
 export type CyNodeData = z.infer<typeof CyNodeDataSchema>;

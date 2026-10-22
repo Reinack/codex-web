@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { streamChat, type ChatMeta } from "@/lib/chat/stream";
 
 type Message = {
@@ -17,9 +18,20 @@ const EXAMPLES = [
   "Mejor build order para Mayans en Arabia",
 ];
 
+// Otras páginas (p. ej. Counters) abren el chat con ?q= para dejar la pregunta
+// escrita: useSearchParams necesita Suspense para prerenderizar el resto.
 export default function ChatPage() {
+  return (
+    <Suspense>
+      <Chat />
+    </Suspense>
+  );
+}
+
+function Chat() {
+  const params = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(() => params.get("q") ?? "");
   const [busy, setBusy] = useState(false);
 
   const patch = (id: string, fn: (m: Message) => Message) =>

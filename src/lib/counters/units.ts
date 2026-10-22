@@ -92,3 +92,10 @@ export const UNIT_CATALOG: CatalogUnit[] = [
   { id: "liao-dao", label: "Liao Dao", imgKey: "liao_dao", kind: "unique", building: "castle", uuName: "Liao Dao" },
   { id: "white-feather-guard", label: "W.Feather", imgKey: "white_feather", kind: "unique", building: "castle", uuName: "White Feather Guard" },
 ];
+
+/** Únicas y regionales solo se muestran si alguna civ elegida las construye
+ *  (sin civ elegida, solo las genéricas). Ids fuera del catálogo: se muestran. */
+export function isShownUnit(id: unknown, buildable: Set<string> | null): boolean {
+  const kind = UNIT_CATALOG.find((u) => u.id === id)?.kind;
+  return !kind || kind === "generic" || (!!buildable && buildable.has(String(id)));
+}

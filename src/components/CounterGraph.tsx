@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import cytoscape, { type NodeDefinition, type EdgeDefinition } from "cytoscape";
 import type { CounterGraph as CounterGraphData, CyNodeData } from "@/lib/api/schema";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 // 'hard/soft/situational' = lo que te counterea (entra al centro);
 // 'beats-*' = a lo que tu unidad le gana (sale del centro); 'center' = la buscada.
@@ -29,7 +30,10 @@ export function CounterGraph({
   graph: CounterGraphData;
   onSelect?: (data: CyNodeData | null) => void;
 }) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Globo al pasar el mouse: el porqué de la relación sin tener que clickear.
+  const [tip, setTip] = useState<{ x: number; y: number; w: number; d: CyNodeData } | null>(null);
   const onSelectRef = useRef(onSelect);
   useEffect(() => {
     onSelectRef.current = onSelect;
@@ -48,17 +52,20 @@ export function CounterGraph({
       .sort(sortFn);
     const beats = graph.nodes.filter((n) => n.data.dir === "beats").sort(sortFn);
 
+    // Elipse: en pantallas anchas los nodos se abren a lo ancho en vez de quedar
+    // en un círculo con los costados vacíos.
+    const kx = Math.min(2.2, Math.max(1, container.clientWidth / Math.max(1, container.clientHeight)));
     const pos = new Map<string, { x: number; y: number }>([["center", { x: 0, y: 0 }]]);
     const place = (list: { data: CyNodeData }[], from: number, to: number) => {
       const n = list.length;
       list.forEach((node, i) => {
         const r = R_BY_STRENGTH[baseType(node.data.type)] || 300;
         const a = n === 1 ? (from + to) / 2 : from + ((to - from) * i) / (n - 1);
-        pos.set(node.data.id, { x: r * Math.cos(a), y: r * Math.sin(a) });
+        pos.set(node.data.id, { x: kx * r * Math.cos(a), y: r * Math.sin(a) });
       });
     };
-    place(counters, Math.PI * (2 / 3), Math.PI * (4 / 3)); // izquierda
-    place(beats, -Math.PI / 3, Math.PI / 3); // derecha
+    place(counters, Math.PI * 0.6, Math.PI * 1.4); // izquierda
+    place(beats, -Math.PI * 0.4, Math.PI * 0.4); // derecha
 
     const nodes: NodeDefinition[] = graph.nodes.map((n) => ({
       data: { ...n.data, color: colorFor(n.data.type) },
@@ -124,18 +131,45 @@ export function CounterGraph({
       wheelSensitivity: 0.2,
     });
 
+    cy.on("mouseover mousemove", "node", (evt) => {
+      const d = evt.target.data() as CyNodeData;
+      if (d.type === "center") return;
+      setTip({ x: evt.renderedPosition.x, y: evt.renderedPosition.y, w: cy.width(), d });
+    });
+    cy.on("mouseout", "node", () => setTip(null));
+    cy.on("viewport", () => setTip(null));
     cy.on("tap", "node", (evt) => onSelectRef.current?.(evt.target.data() as CyNodeData));
     cy.on("tap", (evt) => {
       if (evt.target === cy) onSelectRef.current?.(null);
     });
 
-    return () => cy.destroy();
+    return () => {
+      setTip(null);
+      cy.destroy();
+    };
   }, [graph]);
 
+  const ctx = tip?.d.context && tip.d.context !== "general" ? t(`counters.ctx.${tip.d.context}`) : "";
   return (
-    <div
-      ref={containerRef}
-      className="h-[max(520px,calc(100vh-320px))] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-    />
+    <div className="relative">
+      <div
+        ref={containerRef}
+        className="h-[max(520px,calc(100vh-320px))] w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+      />
+      {tip && (
+        <div
+          className="pointer-events-none absolute z-20 max-w-[260px] border border-[var(--gold)] bg-[#060402]/95 px-2.5 py-2 text-xs leading-snug text-[#e4d4b0]"
+          style={{ left: Math.min(tip.x + 16, Math.max(0, tip.w - 270)), top: tip.y + 16 }}
+        >
+          <b className="text-[#ecd08a]">{(typeof tip.d.full === "string" && tip.d.full) || tip.d.label}</b>
+          <div className="mb-1 mt-0.5 text-[11px] text-[#bfae8a]">
+            {t(tip.d.dir === "beats" ? "counters.tipBeats" : "counters.tipCounters").replace("{unit}", graph.heading)}
+            {tip.d.tier ? ` · ${tip.d.tier}` : ""}
+            {ctx ? ` · ${ctx}` : ""}
+          </div>
+          {typeof tip.d.nota === "string" && tip.d.nota && tip.d.nota !== "—" ? tip.d.nota : <i>{t("counters.noNote")}</i>}
+        </div>
+      )}
+    </div>
   );
 }
