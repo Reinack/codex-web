@@ -449,6 +449,7 @@ function UnitButton({
     <button
       onClick={onClick}
       disabled={disabled}
+      {...(compact || disabled ? {} : { "data-gk": `i:${unit.imgKey}` })}
       title={disabled ? `No construible — ${unit.label}` : `${unit.label} (${KIND_LABEL[unit.kind]})`}
       className={`group relative flex ${compact ? "w-11 shrink-0" : "w-[68px]"} flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center transition-all ${
         active
