@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { Suspense, useState, type CSSProperties } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import { buildRadarPlan } from "@/lib/radar/plan";
 import { buildCivSignatureCombo, type CivCombo, type CivComboLine } from "@/lib/matchup/combo";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { productionHref } from "@/lib/production/plan";
+import { MatchupLabLinks, MatchupTreeDiff } from "@/components/lab/MatchupLabLinks";
 
 const ME_COLOR = "#8a1812";
 const VS_COLOR = "#2a5d86";
@@ -111,13 +113,27 @@ function Legend({
   );
 }
 
+// useSearchParams exige Suspense: el resto de la página se prerenderiza y el análisis corre en el cliente.
 export default function MatchupsPage() {
+  return (
+    <Suspense fallback={<div className="h-72 animate-pulse border border-[var(--rule)] bg-[rgba(255,248,228,0.3)]" />}>
+      <MatchupsView />
+    </Suspense>
+  );
+}
+
+function MatchupsView() {
   const t = useT();
+  const params = useSearchParams();
   const civsQ = useQuery({ queryKey: ["civs"], queryFn: fetchCivsClient });
-  const [me, setMe] = useState("");
-  const [vs, setVs] = useState("");
-  const [map, setMap] = useState("");
-  const [submitted, setSubmitted] = useState<{ me: string; vs: string; map: string } | null>(null);
+  // ?me=&vs=&map= precargan el formulario (los enlaces del Lab y del draft llegan así); con me y vs distintos se analiza solo.
+  const [me, setMe] = useState(params.get("me") ?? "");
+  const [vs, setVs] = useState(params.get("vs") ?? "");
+  const [map, setMap] = useState(params.get("map") ?? "");
+  const [submitted, setSubmitted] = useState<{ me: string; vs: string; map: string } | null>(() => {
+    const a = params.get("me"), b = params.get("vs");
+    return a && b && a !== b ? { me: a, vs: b, map: params.get("map") ?? "" } : null;
+  });
 
   const m = useQuery({
     queryKey: ["matchup", submitted],
@@ -150,6 +166,8 @@ export default function MatchupsPage() {
   };
 
   const civs = civsQ.data ?? [];
+  // Los enlaces (?me=franks) traen el slug; los selectores usan el título de la civ.
+  const asTitle = (v: string) => civs.find((c) => c.title.toLowerCase() === v.toLowerCase() || c.slug === v)?.title ?? v;
 
   return (
     <main className="flex flex-col gap-8">
@@ -167,8 +185,8 @@ export default function MatchupsPage() {
         onSubmit={run}
         className="panel grid gap-3 p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end"
       >
-        <CivSelect label={t("matchups.yourCiv")} value={me} onChange={setMe} options={civs} accent="me" />
-        <CivSelect label={t("matchups.rival")} value={vs} onChange={setVs} options={civs} accent="vs" />
+        <CivSelect label={t("matchups.yourCiv")} value={asTitle(me)} onChange={setMe} options={civs} accent="me" />
+        <CivSelect label={t("matchups.rival")} value={asTitle(vs)} onChange={setVs} options={civs} accent="vs" />
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-500">{t("matchups.mapOptional")}</label>
           <input
@@ -373,6 +391,14 @@ export default function MatchupsPage() {
                 notes={(m.data.missing?.me ?? []).map((x) => x.self)}
               />
             </div>
+          </Section>
+
+          <Section title="Diferencias de árbol" hint="solo lo que difiere entre ambas civs">
+            <MatchupTreeDiff meSlug={m.data.me.slug} vsSlug={m.data.vs.slug} meTitle={m.data.me.title} vsTitle={m.data.vs.title} />
+          </Section>
+
+          <Section title="Seguir en el Lab">
+            <MatchupLabLinks vsSlug={m.data.vs.slug} vsTitle={m.data.vs.title} mapName={submitted?.map} />
           </Section>
 
           {m.data.sharedNotes.length > 0 && (

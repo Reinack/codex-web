@@ -19,6 +19,8 @@ export type PlanState = {
   efficiency: number;
   houses: boolean;
   passive: { relics: number; tradeCarts: number; feitorias: number };
+  /** Comercio por distancia y bonus de equipo de reliquias/trade (ids de eco-model: aztec_team, spanish_team, grand_trunk_road…). */
+  commerce: { map: string; distance: number; caravan: boolean; mods: string[] };
   /** Fuentes de comida con aldeanos fijos (2 jabalíes, 8 ovejas, bayas…); el resto lo cubre `foodSource`. */
   foodRows: FoodRowState[];
   /** Ganado guarnecido en molinos (solo Gurjaras): molinos y ovejas por molino. */
@@ -40,6 +42,7 @@ export const DEFAULT_STATE: PlanState = {
   efficiency: DEFAULT_EFFICIENCY,
   houses: true,
   passive: { relics: 0, tradeCarts: 0, feitorias: 0 },
+  commerce: { map: "medium", distance: 0, caravan: false, mods: [] },
   foodRows: [],
   garrison: { mills: 0, animals: 0 },
   sustain: false,
@@ -80,7 +83,7 @@ const ints = (raw: string | null, n: number): number[] | null => {
 
 export function decodeState(params: ParamsLike): PlanState {
   const s: PlanState = {
-    ...DEFAULT_STATE, passive: { ...DEFAULT_STATE.passive }, have: zero(), lines: [], foodRows: [],
+    ...DEFAULT_STATE, passive: { ...DEFAULT_STATE.passive }, commerce: { ...DEFAULT_STATE.commerce, mods: [] }, have: zero(), lines: [], foodRows: [],
     garrison: { ...DEFAULT_STATE.garrison },
   };
 
@@ -125,6 +128,17 @@ export function decodeState(params: ParamsLike): PlanState {
   if (gg) s.garrison = { mills: clampInt(gg[0], 0, 8), animals: clampInt(gg[1], 0, 10) };
   const p = ints(params.get("p"), 3);
   if (p) s.passive = { relics: clampInt(p[0], 0, 99), tradeCarts: clampInt(p[1], 0, 99), feitorias: clampInt(p[2], 0, 99) };
+  // cm = mapa,distancia,caravan(0|1),mods separados por "." (p. ej. cm=large,200,1,spanish_team.aztec_team)
+  const cm = params.get("cm");
+  if (cm) {
+    const [map, dist, car, mods] = cm.split(",");
+    s.commerce = {
+      map: map && /^[a-z]{3,12}$/.test(map) ? map : DEFAULT_STATE.commerce.map,
+      distance: clampInt(Number.parseInt(dist ?? "0", 10) || 0, 0, 700),
+      caravan: car === "1",
+      mods: (mods ?? "").split(".").filter((x) => ID.test(x)).slice(0, 8),
+    };
+  }
   const have = ints(params.get("have"), 4);
   if (have) {
     s.sustain = true;
@@ -148,6 +162,10 @@ export function encodeState(s: PlanState): string {
   if (s.garrison.mills > 0) add("gg", `${s.garrison.mills},${s.garrison.animals}`);
   const { relics, tradeCarts, feitorias } = s.passive;
   if (relics || tradeCarts || feitorias) add("p", `${relics},${tradeCarts},${feitorias}`);
+  const c = s.commerce;
+  if (c.distance > 0 || c.caravan || c.mods.length || c.map !== DEFAULT_STATE.commerce.map) {
+    add("cm", `${c.map},${c.distance},${c.caravan ? 1 : 0},${c.mods.join(".")}`);
+  }
   if (s.sustain) add("have", RESOURCES.map((r) => s.have[r]).join(","));
   return parts.join("&");
 }

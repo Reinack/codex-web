@@ -16,6 +16,7 @@ export function CivCard({ civ }: { civ: CivListItem }) {
   return (
     <Link
       href={`/civs/${civ.slug}`}
+      data-gk={`c:${civ.slug}`}
       className="surface surface-hover group flex flex-col items-center gap-2 p-4 text-center"
     >
       <Image

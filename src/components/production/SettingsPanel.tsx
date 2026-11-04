@@ -6,6 +6,7 @@ import {
   AGES, RESOURCES, ageIndex, effectiveTechs, type EcoModel, type PlanResult, type Res,
 } from "@/lib/production/engine";
 import type { PlanState } from "@/lib/production/plan";
+import { CommercePanel } from "./CommercePanel";
 import { ResIcon, Segmented, fill, useNumberFormat, useSourceLabel } from "./ui";
 
 // Mejoras que mueven la tasa de recolección, en el orden en que se investigan.
@@ -143,6 +144,7 @@ export function SettingsPanel({ model, state, patch, result, civ, civName, civMo
             <p className="mt-1 text-xs text-zinc-500">
               {fill(t("production.cfg.passiveHint"), { relic: model.passive.relic, trade: model.passive.tradeCart })}
             </p>
+            <CommercePanel model={model} state={state} patch={patch} />
           </div>
         </div>
 

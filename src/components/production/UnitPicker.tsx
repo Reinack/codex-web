@@ -92,6 +92,7 @@ export function UnitPicker({ items, counts, planAge, onAdd }: Props) {
                 key={it.id}
                 type="button"
                 onClick={() => onAdd(it.id)}
+                data-gk={`i:${it.id}`}
                 title={it.name}
                 className={`relative flex flex-col items-center gap-1 border px-1 py-1.5 text-center transition-colors ${mark} ${
                   n

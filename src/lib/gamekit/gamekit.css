@@ -1,0 +1,45 @@
+/* GameKit — íconos y hover compartidos (ver src/lib/gamekit). Guía de estilo del árbol: casillas con el pigmento de su
+   familia y filete de tinta (.eu-icon), emblemas envejecidos con sepia, tooltip en negro liso. */
+.gk-ico { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 5px; flex-shrink: 0;
+  border: 1px solid var(--ink-900); background: var(--earth-800); box-shadow: inset 0 0 0 1px rgba(255, 240, 210, 0.15); display: inline-block; }
+.gk-ico.k-unit { background: var(--unit-c); } .gk-ico.k-tech { background: var(--tech-c); } .gk-ico.k-building { background: var(--bld-c); }
+.gk-ico.gk-s { width: 18px; height: 18px; margin-right: 4px; vertical-align: -4px; }
+.gk-ico.gk-m { width: 32px; height: 32px; margin-right: 6px; }
+.gk-ico.gk-l { width: 48px; height: 48px; }
+.gk-run { white-space: nowrap; }
+.gk-emb { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; margin-right: 5px; flex-shrink: 0; filter: sepia(0.35) saturate(0.8); display: inline-block; }
+.gk-emb.gk-es { width: 16px; height: 16px; margin-right: 3px; vertical-align: -3px; }
+.gk-emb.gk-em { width: 28px; height: 28px; }
+.gk-emb.gk-el { width: 40px; height: 40px; margin-right: 8px; }
+.gk-emb.gk-exl { width: 60px; height: 60px; margin: 0; }
+.gk-age { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; margin-right: 5px; filter: sepia(0.25) saturate(0.85); display: inline-block; }
+.gk-stat { width: 14px; height: 14px; object-fit: contain; vertical-align: -2px; margin: 0 2px 0 6px; display: inline-block; }
+[data-gk]:hover.gk-ico, [data-gk]:hover.gk-emb { filter: brightness(1.15); outline: 1px solid var(--red-500); outline-offset: 1px; }
+.gk-run:hover { text-decoration: underline dotted var(--red-500); text-underline-offset: 3px; }
+
+.gk-tip { position: fixed; z-index: 10000; left: 0; top: 0; width: max-content; max-width: min(360px, calc(100vw - 16px)); pointer-events: none;
+  padding: 10px 12px; font: 15px/1.35 var(--font-body); color: var(--on-dark);
+  background: rgba(6, 4, 2, 0.9); border: 1px solid rgba(236, 220, 182, 0.3); box-shadow: 0 0 0 1px #0b0603, 0 8px 22px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8); opacity: 0; visibility: hidden; transition: opacity 0.1s; }
+.gk-tip.on { opacity: 1; visibility: visible; }
+.gk-head { display: flex; align-items: center; gap: 9px; }
+.gk-box { display: inline-flex; width: 42px; height: 42px; flex-shrink: 0; border: 1px solid var(--ink-900); box-shadow: inset 0 0 0 1px rgba(255, 240, 210, 0.15); background: var(--earth-800); }
+.gk-box.k-unit { background: var(--unit-c); } .gk-box.k-tech { background: var(--tech-c); } .gk-box.k-building { background: var(--bld-c); }
+.gk-box img { width: 100%; height: 100%; object-fit: contain; }
+.gk-name { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: 0.6px; color: var(--parch-50); }
+.gk-alias { font-style: italic; color: var(--on-dark-dim); font-size: 14px; }
+.gk-sub { margin: 5px 0 2px; font-variant: small-caps; letter-spacing: 0.5px; color: var(--on-dark-dim); font-size: 14.5px; }
+.gk-stats { display: flex; flex-wrap: wrap; gap: 3px 12px; margin: 6px 0 4px; font-variant-numeric: lining-nums tabular-nums; }
+.gk-stats b, .gk-c { font-weight: 700; color: var(--parch-50); }
+.gk-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; margin-top: 4px; font-variant-numeric: lining-nums tabular-nums; }
+.gk-lbl { font-variant: small-caps; letter-spacing: 0.4px; color: var(--on-dark-dim); min-width: 78px; }
+.gk-c .gk-stat { margin: 0 3px 0 0; } .gk-t { color: var(--on-dark-dim); }
+.gk-text { margin: 6px 0 2px; font-style: italic; color: var(--on-dark); }
+.gk-rel { margin-top: 5px; font-size: 14px; color: var(--on-dark-dim); }
+.gk-rel b { font-variant: small-caps; letter-spacing: 0.4px; color: var(--gold-text); font-weight: 600; }
+.gk-prod { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 3px; color: var(--on-dark); } .gk-prod > span { white-space: nowrap; }
+.gk-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 14px; }
+.gk-list li { padding-left: 16px; position: relative; margin: 2px 0; }
+.gk-list li::before { position: absolute; left: 0; font-weight: 700; }
+.gk-list.ok li::before { content: "✔"; color: #8fbf62; } .gk-list.no li::before { content: "✖"; color: #e0846f; }
+@media (prefers-reduced-motion: reduce) { .gk-tip { transition: none; } }

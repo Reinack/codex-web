@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 // Vistas-herramienta (árbol, counters, producción, grafo) usan todo el ancho de la
 // pantalla; el resto queda en una hoja centrada, más cómoda para leer.
-const FULL_WIDTH = ["/tree", "/counters", "/production", "/graph"];
+const FULL_WIDTH = ["/tree", "/counters", "/production", "/graph", "/lab"];
 // El árbol ya trae su propio pergamino: va sin la hoja de papiro, para ganar lugar.
 const BARE = ["/tree"];
 

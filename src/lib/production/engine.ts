@@ -70,9 +70,40 @@ export type EcoModel = {
   techs: Record<string, ModelTech>;
   defaultSources: Record<string, Partial<Record<Res, string>>>;
   defaultTechs: Record<string, string[]>;
-  passive: { relic: number; tradeCart: number; feitoria: ResMap };
+  passive: { relic: number; tradeCart: number; feitoria: ResMap; relicMods: Record<string, RelicMod>; trade: TradeModel | null };
   houseCost: ResMap;
 };
+
+/** Bono que suma una reliquia (bonus de equipo, tech): oro y/o comida por minuto. */
+export type RelicMod = { label: string; gold: number; food: number };
+
+/** Comercio por distancia (market.md): oro por viaje = k · d · (d / tamañoMapa + offset), d = distancia − casillas del edificio. */
+export type TradeModel = {
+  k: number; offset: number; buildingTiles: number;
+  cartSpeed: number; caravanPct: number;
+  mapSizes: Record<string, number>;
+  mods: Record<string, { label: string; goldPct: number; foodPctOfGold: number }>;
+};
+
+export type TradeConfig = { map?: string; distance: number; caravan?: boolean; mods?: string[] };
+
+/**
+ * Oro por viaje, segundos por viaje (ida y vuelta a la velocidad del cart; Caravan +50 %) e ingreso por cart por minuto.
+ * Bonus de equipo: Spanish +25 % de oro, Grand Trunk Road +10 %, Bengalis suman comida como % del oro.
+ */
+export function tradeStats(m: TradeModel, cfg: TradeConfig) {
+  const size = m.mapSizes[cfg.map ?? "medium"] ?? m.mapSizes.medium ?? 168;
+  const D = Math.max(0, cfg.distance);
+  const d = Math.max(0, D - m.buildingTiles);
+  const mods = (cfg.mods ?? []).map((id) => m.mods[id]).filter(Boolean);
+  const goldPct = mods.reduce((a, x) => a + x.goldPct, 0);
+  const foodPct = mods.reduce((a, x) => a + x.foodPctOfGold, 0);
+  const goldPerTrip = m.k * d * (d / size + m.offset) * (1 + goldPct / 100);
+  const speed = m.cartSpeed * (cfg.caravan ? 1 + m.caravanPct / 100 : 1);
+  const tripSec = D > 0 ? (2 * D) / speed : 0;
+  const gold = tripSec > 0 ? (goldPerTrip * 60) / tripSec : 0;
+  return { mapSize: size, distance: D, goldPerTrip, tripSec, perCart: { gold, food: (gold * foodPct) / 100 } };
+}
 
 // Forma mínima del catálogo (estructural: el tipo zod del cliente y los fixtures de
 // los tests la cumplen sin importar zod acá).
@@ -134,13 +165,30 @@ export function buildEcoModel(raw: RawCatalog): EcoModel {
     defaultTechs[age] = Array.isArray(d.techs) ? (d.techs as string[]) : [];
   }
 
+  type RawMod = { label?: unknown; gold?: unknown; food?: unknown; goldPct?: unknown; foodPctOfGold?: unknown };
   const p = raw.passive as {
-    relic?: { ratePerMin?: unknown }; trade_cart?: { ratePerMin?: unknown }; feitoria?: { ratePerMin?: Partial<ResMap> };
+    relic?: { ratePerMin?: unknown; mods?: Record<string, RawMod> }; trade_cart?: { ratePerMin?: unknown }; feitoria?: { ratePerMin?: Partial<ResMap> };
+    trade?: {
+      formula?: { k?: unknown; offset?: unknown; buildingTiles?: unknown }; cartSpeedTilesPerSec?: unknown; caravanSpeedPct?: unknown;
+      mapSizes?: Record<string, unknown>; mods?: Record<string, RawMod>;
+    };
   };
+  const relicMods: Record<string, RelicMod> = {};
+  for (const [id, m] of Object.entries(p.relic?.mods ?? {})) relicMods[id] = { label: String(m.label ?? id), gold: num(m.gold, 0), food: num(m.food, 0) };
+  const trade: TradeModel | null = p.trade?.formula
+    ? {
+        k: num(p.trade.formula.k, 0.46), offset: num(p.trade.formula.offset, 0.3), buildingTiles: num(p.trade.formula.buildingTiles, 5),
+        cartSpeed: num(p.trade.cartSpeedTilesPerSec, 1.25), caravanPct: num(p.trade.caravanSpeedPct, 50),
+        mapSizes: Object.fromEntries(Object.entries(p.trade.mapSizes ?? {}).map(([k, v]) => [k, num(v, 168)])),
+        mods: Object.fromEntries(Object.entries(p.trade.mods ?? {}).map(([id, m]) => [id, { label: String(m.label ?? id), goldPct: num(m.goldPct, 0), foodPctOfGold: num(m.foodPctOfGold, 0) }])),
+      }
+    : null;
   const passive = {
     relic: num(p.relic?.ratePerMin, 30),
     tradeCart: num(p.trade_cart?.ratePerMin, 40),
     feitoria: fullCost(p.feitoria?.ratePerMin ?? {}),
+    relicMods,
+    trade,
   };
 
   const house = items.house;
@@ -204,7 +252,13 @@ export type PlanInput = {
   efficiency: number;
   /** Sumar la madera de las casas que pide la población nueva. */
   houses: boolean;
-  passive: { relics: number; tradeCarts: number; feitorias: number };
+  passive: {
+    relics: number; tradeCarts: number; feitorias: number;
+    /** Ids de bonus de reliquia activos (aztec_team, burgundian_team, grand_trunk_road). */
+    relicMods?: string[];
+    /** Comercio por distancia: sin distancia (0) se usa el valor plano por cart. */
+    trade?: TradeConfig;
+  };
   /** Bonos económicos de la civ. */
   effects?: EcoEffects;
   /** Ingreso pasivo extra por minuto (p. ej. ganado guarnecido de los Gurjaras). */
@@ -348,7 +402,23 @@ function prepare(model: EcoModel, input: PlanInput): Prepared {
 
   const passiveIncome = zero();
   const { relics, tradeCarts, feitorias } = input.passive;
-  passiveIncome.gold += Math.max(0, relics) * model.passive.relic + Math.max(0, tradeCarts) * model.passive.tradeCart;
+  const nRelics = Math.max(0, relics);
+  let relicGold = model.passive.relic, relicFood = 0;
+  for (const id of input.passive.relicMods ?? []) {
+    const rm = model.passive.relicMods[id];
+    if (rm) { relicGold += rm.gold; relicFood += rm.food; }
+  }
+  passiveIncome.gold += nRelics * relicGold;
+  passiveIncome.food += nRelics * relicFood;
+  const nCarts = Math.max(0, tradeCarts);
+  const tr = input.passive.trade;
+  if (nCarts > 0 && tr && tr.distance > 0 && model.passive.trade) {
+    const st = tradeStats(model.passive.trade, tr);
+    passiveIncome.gold += nCarts * st.perCart.gold;
+    passiveIncome.food += nCarts * st.perCart.food;
+  } else {
+    passiveIncome.gold += nCarts * model.passive.tradeCart;
+  }
   for (const r of RESOURCES) {
     passiveIncome[r] += Math.max(0, feitorias) * model.passive.feitoria[r] + Math.max(0, input.extraPassive?.[r] ?? 0);
   }

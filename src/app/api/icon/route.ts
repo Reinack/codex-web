@@ -4,8 +4,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 
-// Íconos del árbol: por carpeta (Unit/Building/…) o los de recurso en la raíz de img/.
-const SAFE_PATH = /^img\/((Unit|Building|Tech|Ages|Civs)\/[A-Za-z0-9_]+|food|wood|gold|stone)\.png$/;
+// Íconos del árbol: por carpeta (Unit/Building/…), los de recurso en la raíz de img/ y los de atributos (Icon/*.webp).
+const SAFE_PATH =
+  /^img\/(((Unit|Building|Tech|Ages|Civs)\/[A-Za-z0-9_]+|food|wood|gold|stone)\.png|Icon\/[A-Za-z_]+\.webp)$/;
 
 export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams.get("p") ?? "";

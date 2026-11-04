@@ -43,7 +43,7 @@ export function LineList({ rows, showPriority, onChange, onRemove, onDuplicate, 
             className="surface flex flex-wrap items-center gap-x-5 gap-y-2.5 p-2.5 sm:p-3"
           >
             <div className="flex min-w-[12.5rem] flex-1 items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center bg-zinc-950/90 ring-1 ring-black/10">
+              <span data-gk={`i:${item.id}`} className="flex h-11 w-11 shrink-0 items-center justify-center bg-zinc-950/90 ring-1 ring-black/10">
                 <ItemIcon name={item.name} imgPath={item.imgPath} className="h-9 w-9" />
               </span>
               <div className="min-w-0">
