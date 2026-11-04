@@ -77,10 +77,16 @@ export function ProductionPlanner() {
     () => ({
       lines: state.lines, age: state.age, costs: civ ? costsQ.data?.costs : undefined,
       foodSource: state.foodSource, foodRows: foodRowsInput, techs: state.techs, efficiency: state.efficiency,
-      houses: state.houses, passive: state.passive, effects,
+      houses: state.houses, effects,
+      passive: {
+        ...state.passive,
+        relicMods: model ? state.commerce.mods.filter((id) => model.passive.relicMods[id]) : [],
+        trade: { map: state.commerce.map, distance: state.commerce.distance, caravan: state.commerce.caravan,
+                 mods: model?.passive.trade ? state.commerce.mods.filter((id) => model.passive.trade!.mods[id]) : [] },
+      },
       extraPassive: garrisonFoodPerMin > 0 ? { food: garrisonFoodPerMin } : undefined,
     }),
-    [state, civ, costsQ.data, foodRowsInput, effects, garrisonFoodPerMin],
+    [state, civ, costsQ.data, foodRowsInput, effects, garrisonFoodPerMin, model],
   );
   const result = useMemo(() => (model ? solvePlan(model, planInput) : null), [model, planInput]);
   const sustain = useMemo(

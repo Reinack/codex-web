@@ -107,3 +107,15 @@ describe("plantillas", () => {
     assert.equal(new Set(keys).size, keys.length);
   });
 });
+
+describe("comercio en la URL", () => {
+  it("ida y vuelta de mapa, distancia, Caravan y bonus", () => {
+    const s = decodeState(new URLSearchParams("cm=large,200,1,spanish_team.aztec_team"));
+    assert.deepEqual(s.commerce, { map: "large", distance: 200, caravan: true, mods: ["spanish_team", "aztec_team"] });
+    assert.match(encodeState(s), /cm=large,200,1,spanish_team\.aztec_team/);
+  });
+  it("por defecto no viaja en la URL y acota la distancia", () => {
+    assert.equal(encodeState(DEFAULT_STATE).includes("cm="), false);
+    assert.equal(decodeState(new URLSearchParams("cm=medium,9999,0,")).commerce.distance, 700);
+  });
+});

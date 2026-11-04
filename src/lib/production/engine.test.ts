@@ -6,7 +6,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  NO_EFFECTS, buildEcoModel, evaluateSustain, nextActivity, solvePlan,
+  NO_EFFECTS, buildEcoModel, evaluateSustain, nextActivity, solvePlan, tradeStats,
   type EcoEffects, type PlanInput, type PlanLine, type RawCatalog,
 } from "./engine.ts";
 
@@ -383,5 +383,30 @@ describe("¿puedo sostenerlo? con filas de comida", () => {
   it("las filas cuentan como economía aunque no haya granjeros", () => {
     const s = evaluateSustain(model, base([line("knight", 1)], { foodRows: [row("a", "hunt", 10)] }), { food: 0, wood: 5, gold: 10, stone: 0 });
     assert.equal(s.perResource.food.status, "ok");
+  });
+});
+
+describe("comercio por distancia (port de eco.mjs)", () => {
+  const trade = {
+    k: 0.46, offset: 0.3, buildingTiles: 5, cartSpeed: 1.25, caravanPct: 50,
+    mapSizes: { medium: 168, ludicrous: 480 },
+    mods: { spanish_team: { label: "x", goldPct: 25, foodPctOfGold: 0 }, bengali_team: { label: "y", goldPct: 0, foodPctOfGold: 10 } },
+  };
+  it("máximo teórico Ludicrous ≈ 517 de oro por viaje (market.md), tolerancia 3%", () => {
+    const s = tradeStats(trade, { map: "ludicrous", distance: 480 * Math.SQRT2 });
+    assert.ok(Math.abs(s.goldPerTrip - 517) / 517 < 0.03, `dio ${s.goldPerTrip}`);
+  });
+  it("hacen falta más de 5 casillas para generar oro", () => {
+    assert.equal(tradeStats(trade, { map: "medium", distance: 5 }).goldPerTrip, 0);
+  });
+  it("Caravan acelera el cart 50% y Spanish suma 25% de oro por viaje", () => {
+    const base = tradeStats(trade, { map: "medium", distance: 150 });
+    const car = tradeStats(trade, { map: "medium", distance: 150, caravan: true });
+    assert.ok(Math.abs(car.perCart.gold / base.perCart.gold - 1.5) < 0.02);
+    const sp = tradeStats(trade, { map: "medium", distance: 150, mods: ["spanish_team"] });
+    assert.ok(Math.abs(sp.goldPerTrip / base.goldPerTrip - 1.25) < 0.01);
+  });
+  it("Bengalis suman comida además del oro", () => {
+    assert.ok(tradeStats(trade, { map: "medium", distance: 150, mods: ["bengali_team"] }).perCart.food > 0);
   });
 });
